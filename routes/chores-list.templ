@@ -1,0 +1,16 @@
+package routes
+
+import (
+    "goDoChores/models"
+)
+
+templ choresList(chores []models.Chore) {
+    @base() {
+    <ul>
+        for _, el := range chores {
+        <li>{ el.Name }</li>
+
+        }
+    </ul>
+    }
+}
