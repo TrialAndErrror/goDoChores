@@ -28,6 +28,7 @@ func main() {
 	r.Use(middleware.Logger)
 
 	r.Get("/", views.Home)
+	r.Post("/", views.HomePost)
 
 	r.Get("/chores/", views.ChoresList)
 	r.Get("/chores/new", views.ChoresCreateGet)

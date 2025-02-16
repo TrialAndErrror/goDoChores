@@ -33,7 +33,7 @@ func ChoreFromForm(data url.Values) (Chore, error) {
 
 type ChoreReminder struct {
 	gorm.Model
-	ChoreID  int
+	ChoreID  uint64
 	Date     time.Time
 	Interval string
 }
@@ -57,7 +57,7 @@ func ChoreReminderFromForm(data url.Values) (ChoreReminder, error) {
 	}
 
 	choreIDString := data.Get("choreID")
-	choreID, choreIDParseErr := strconv.Atoi(choreIDString)
+	choreID, choreIDParseErr := strconv.ParseUint(choreIDString, 10, 64)
 	if choreIDParseErr != nil {
 		return ChoreReminder{}, choreIDParseErr
 	}
@@ -75,4 +75,19 @@ func ChoreReminderFromForm(data url.Values) (ChoreReminder, error) {
 	}
 	return reminder, nil
 
+}
+
+func GetNextReminderDate(reminder ChoreReminder) (newDate time.Time, error error) {
+	switch reminder.Interval {
+	case "day":
+		return reminder.Date.AddDate(0, 0, 1), nil
+	case "week":
+		return reminder.Date.AddDate(0, 0, 7), nil
+	case "month":
+		return reminder.Date.AddDate(0, 1, 0), nil
+	case "year":
+		return reminder.Date.AddDate(1, 0, 0), nil
+	default:
+		return time.Time{}, errors.New("invalid interval")
+	}
 }
