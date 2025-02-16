@@ -19,17 +19,25 @@ func main() {
 	}
 
 	// Migrate the schema
-	migrateErr := db.AutoMigrate(&models.Chore{})
+	migrateErr := db.AutoMigrate(&models.Chore{}, &models.ChoreReminder{})
 	if migrateErr != nil {
 		panic("failed to migrate database")
 	}
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+
 	r.Get("/", views.Home)
+
 	r.Get("/chores/", views.ChoresList)
 	r.Get("/chores/new", views.ChoresCreateGet)
 	r.Post("/chores/new", views.ChoresCreatePost)
 	r.Get("/chores/{choreID}", views.ChoresDetail)
+
+	r.Get("/reminders/", views.RemindersList)
+	r.Get("/reminders/new", views.RemindersCreateGet)
+	r.Post("/reminders/new", views.RemindersCreatePost)
+	r.Get("/reminders/{reminderID}", views.RemindersDetail)
+
 	log.Fatal(http.ListenAndServe(":3000", r))
 }

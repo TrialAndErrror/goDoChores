@@ -2,9 +2,10 @@ package views
 
 import (
     "goDoChores/models"
+    "fmt"
 )
 
-templ choresDetailPage(chore models.Chore, reminder models.ChoreReminder) {
+templ remindersDetailPage(chore models.Chore, reminder models.ChoreReminder) {
 	@base("chores") {
 		<div class="card" data-bs-theme="dark">
 			<h2 class="card-header" style="padding: 1.5rem">
@@ -12,8 +13,8 @@ templ choresDetailPage(chore models.Chore, reminder models.ChoreReminder) {
 			</h2>
 			<div class="card-body d-flex flex-column">
 			    <p>Chore: { chore.Name }</p>
-			    <p>Next Date: { reminder.date }</p>
-			    <p>Interval: { reminder.interval }</p>
+			    <p>Next Date: { fmt.Sprintf("%t", reminder.Date) }</p>
+			    <p>Interval: { models.IntervalNames[reminder.Interval] }</p>
 			</div>
 		</div>
 	}

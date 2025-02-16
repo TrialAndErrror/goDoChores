@@ -1,10 +1,15 @@
 package views
 
-templ choresCreatePage() {
+import (
+    "goDoChores/models"
+    "fmt"
+)
+
+templ remindersCreatePage(chores []models.Chore, intervals map[string]string) {
 	@base("chores") {
 		<div class="card" data-bs-theme="dark">
 			<h2 class="card-header" style="padding: 1.5rem">
-				Create Chore
+				Create Chore Reminder
 			</h2>
 			<div class="card-body">
 				<form class="custom-form" method="post">
@@ -12,7 +17,7 @@ templ choresCreatePage() {
 						<label for="choreID">Chore</label>
 						<select id="choreID" name="choreID" class="form-control">
 				            for _, el := range chores {
-				                <option value={ el.ID }>{ el.Name }</option>
+				                <option value={ fmt.Sprintf("%d", el.ID) }>{ el.Name }</option>
 				            }
 						</select>
 					</div>
@@ -22,16 +27,13 @@ templ choresCreatePage() {
 					</div>
 					<div class="form-group">
 						<label for="interval">Interval</label>
-						<select>
-						    <option value="day">Daily</option>
-						    <option value="week">Weekly</option>
-						    <option value="month">Monthly</option>
-						    <option value="annual">Annual</option>
-						    <option value="on">Specific Date</option>
+						<select name="interval" id="interval" class="form-control">
+						    for name, value := range intervals {
+						        <option value={value}>{name}</option>
+						    }
 						</select>
-						<input type="number" class="form-control" id="time" name="time" placeholder="How long does the task normally take?"/>
 					</div>
-					<button type="submit" class="btn btn-success btn-lg">Create Chore</button>
+					<button type="submit" class="btn btn-success btn-lg">Create Chore Reminder</button>
 				</form>
 			</div>
 		</div>
