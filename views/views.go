@@ -7,13 +7,16 @@ import (
 	"goDoChores/routes"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"log"
 	"net/http"
 	"time"
 )
 
 func Home(w http.ResponseWriter, r *http.Request) {
-	component := home("Jerry")
+	reminders, reminderListErr := getChoreReminderList()
+	if reminderListErr != nil {
+		http.Error(w, reminderListErr.Error(), http.StatusInternalServerError)
+	}
+	component := home(reminders)
 	err := component.Render(context.Background(), w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -93,24 +96,29 @@ func ChoresDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 type ChoreReminderListEntry struct {
-	ReminderID string
+	ReminderID int
 	Interval   string
 	Date       time.Time
-	ChoreID    string
+	ChoreID    int
 	Name       string
 }
 
-func RemindersList(w http.ResponseWriter, r *http.Request) {
+func getChoreReminderList() ([]ChoreReminderListEntry, error) {
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, err
 	}
 
 	var reminders []ChoreReminderListEntry
 	db.Model(&models.ChoreReminder{}).Select("chore_reminders.id as reminder_id, chore_reminders.interval,chore_reminders.date, chores.id as chore_id, chores.name").Joins("left join chores on chore_reminders.chore_id = chores.id").Scan(&reminders)
+	return reminders, nil
+}
 
-	log.Printf("%v", reminders)
+func RemindersList(w http.ResponseWriter, r *http.Request) {
+	reminders, err := getChoreReminderList()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 
 	component := remindersList(reminders)
 	renderErr := component.Render(context.Background(), w)

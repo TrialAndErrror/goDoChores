@@ -2,11 +2,10 @@ package views
 
 import (
 	"goDoChores/routes"
-	"fmt"
 )
 
 templ remindersList(reminders []ChoreReminderListEntry) {
-	@base("chores") {
+	@base("reminders") {
 		<div class="card" data-bs-theme="dark">
 			<h2 class="card-header" style="padding: 1.5rem">
 				All Chore Reminders
@@ -16,7 +15,7 @@ templ remindersList(reminders []ChoreReminderListEntry) {
 					<div class="col-4 p-2">
 						<a href={ templ.SafeURL(routes.URLFor("remindersDetail", el.ReminderID)) } class="link-dark">
 							<div class="chore-card">
-								{ el.Name }: { fmt.Sprintf("%t", el.Date) }
+								{ el.Name } ({ el.Date.Format("January 02, 2006") })
 							</div>
 						</a>
 					</div>

@@ -38,13 +38,6 @@ type ChoreReminder struct {
 	Interval string
 }
 
-type ChoreReminderWithChoreData struct {
-	ChoreReminder
-	Name        *string
-	Description *string
-	Time        *int
-}
-
 var ValidIntervals = map[string]string{
 	"Daily":   "day",
 	"Weekly":  "week",

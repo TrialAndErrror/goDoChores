@@ -6,7 +6,7 @@ import (
 )
 
 templ remindersCreatePage(chores []models.Chore, intervals map[string]string) {
-	@base("chores") {
+	@base("reminders") {
 		<div class="card" data-bs-theme="dark">
 			<h2 class="card-header" style="padding: 1.5rem">
 				Create Chore Reminder
