@@ -13,6 +13,7 @@ type Chore struct {
 	gorm.Model
 	Name, Description string
 	Time              int
+	Reminders         []ChoreReminder `gorm:"foreignKey:ChoreID"`
 }
 
 func ChoreFromForm(data url.Values) (Chore, error) {

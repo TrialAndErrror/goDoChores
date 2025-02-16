@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"net/http"
+	"time"
 )
 
 func Home(w http.ResponseWriter, r *http.Request) {
@@ -92,8 +93,11 @@ func ChoresDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 type ChoreReminderListEntry struct {
-	ID   string
-	Name string
+	ReminderID string
+	Interval   string
+	Date       time.Time
+	ChoreID    string
+	Name       string
 }
 
 func RemindersList(w http.ResponseWriter, r *http.Request) {
@@ -103,13 +107,12 @@ func RemindersList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var remindersWithChoreData []ChoreReminderListEntry
+	var reminders []ChoreReminderListEntry
+	db.Model(&models.ChoreReminder{}).Select("chore_reminders.id as reminder_id, chore_reminders.interval,chore_reminders.date, chores.id as chore_id, chores.name").Joins("left join chores on chore_reminders.chore_id = chores.id").Scan(&reminders)
 
-	db.Model(&models.ChoreReminder{}).Select("chore_reminders.id, chores.name").Joins("full join chores on chores.id = chore_reminders.chore_id").Scan(&ChoreReminderListEntry{})
+	log.Printf("%v", reminders)
 
-	log.Printf("%v", remindersWithChoreData)
-
-	component := remindersList(remindersWithChoreData)
+	component := remindersList(reminders)
 	renderErr := component.Render(context.Background(), w)
 	if renderErr != nil {
 		http.Error(w, renderErr.Error(), http.StatusInternalServerError)
