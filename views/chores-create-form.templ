@@ -1,0 +1,28 @@
+package views
+
+templ choresCreatePage() {
+	@base("chores") {
+		<div class="card" data-bs-theme="dark">
+			<h2 class="card-header" style="padding: 1.5rem">
+				Create Chore
+			</h2>
+			<div class="card-body">
+				<form class="custom-form" method="post">
+					<div class="form-group">
+						<label for="name">Name</label>
+						<input type="text" class="form-control" id="name" name="name" placeholder="Enter name of chore to be performed"/>
+					</div>
+					<div class="form-group">
+						<label for="description">Description</label>
+						<textarea class="form-control" id="description" name="description" placeholder="Describe the chore to be performed"></textarea>
+					</div>
+					<div class="form-group">
+						<label for="time">Duration (minutes)</label>
+						<input type="number" class="form-control" id="time" name="time" placeholder="How long does the task normally take?"/>
+					</div>
+					<button type="submit" class="btn btn-success btn-lg">Create Chore</button>
+				</form>
+			</div>
+		</div>
+	}
+}

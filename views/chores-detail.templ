@@ -1,0 +1,20 @@
+package views
+
+import (
+    "goDoChores/models"
+)
+
+templ choresDetailPage(chore models.Chore) {
+	@base("chores") {
+		<div class="card" data-bs-theme="dark">
+			<h2 class="card-header" style="padding: 1.5rem">
+				View Chore
+			</h2>
+			<div class="card-body d-flex flex-column">
+			    <p>Name: { chore.Name }</p>
+			    <p>Description: { chore.Description }</p>
+			    <p>Time: { string(chore.Time) }</p>
+			</div>
+		</div>
+	}
+}

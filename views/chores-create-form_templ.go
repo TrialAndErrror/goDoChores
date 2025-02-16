@@ -8,12 +8,7 @@ package views
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import (
-	"goDoChores/models"
-	"goDoChores/routes"
-)
-
-func choresList(chores []models.Chore) templ.Component {
+func choresCreatePage() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -46,39 +41,7 @@ func choresList(chores []models.Chore) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"card\" data-bs-theme=\"dark\"><h2 class=\"card-header\" style=\"padding: 1.5rem\">All Chores</h2><div class=\"card-body row\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			for _, el := range chores {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"col-4 p-2\"><a href=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var3 templ.SafeURL = templ.SafeURL(routes.URLFor("choresDetail", el.ID))
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var3)))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"link-dark\"><div class=\"chore-card\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(el.Name)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/chores-list.templ`, Line: 19, Col: 17}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></a></div>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"card\" data-bs-theme=\"dark\"><h2 class=\"card-header\" style=\"padding: 1.5rem\">Create Chore</h2><div class=\"card-body\"><form class=\"custom-form\" method=\"post\"><div class=\"form-group\"><label for=\"name\">Name</label> <input type=\"text\" class=\"form-control\" id=\"name\" name=\"name\" placeholder=\"Enter name of chore to be performed\"></div><div class=\"form-group\"><label for=\"description\">Description</label> <textarea class=\"form-control\" id=\"description\" name=\"description\" placeholder=\"Describe the chore to be performed\"></textarea></div><div class=\"form-group\"><label for=\"time\">Duration (minutes)</label> <input type=\"number\" class=\"form-control\" id=\"time\" name=\"time\" placeholder=\"How long does the task normally take?\"></div><button type=\"submit\" class=\"btn btn-success btn-lg\">Create Chore</button></form></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"goDoChores/models"
-	"goDoChores/routes"
 	"goDoChores/views"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -27,7 +26,10 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	r.Get(routes.URLFor("home"), views.Home)
-	r.Get(routes.URLFor("choresList"), views.ChoresList)
+	r.Get("/", views.Home)
+	r.Get("/chores/", views.ChoresList)
+	r.Get("/chores/new", views.ChoresCreateGet)
+	r.Post("/chores/new", views.ChoresCreatePost)
+	r.Get("/chores/{choreID}", views.ChoresDetail)
 	log.Fatal(http.ListenAndServe(":3000", r))
 }
