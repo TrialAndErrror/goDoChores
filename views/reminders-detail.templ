@@ -1,0 +1,20 @@
+package views
+
+import (
+    "goDoChores/models"
+)
+
+templ choresDetailPage(chore models.Chore, reminder models.ChoreReminder) {
+	@base("chores") {
+		<div class="card" data-bs-theme="dark">
+			<h2 class="card-header" style="padding: 1.5rem">
+				View Chore Reminder
+			</h2>
+			<div class="card-body d-flex flex-column">
+			    <p>Chore: { chore.Name }</p>
+			    <p>Next Date: { reminder.date }</p>
+			    <p>Interval: { reminder.interval }</p>
+			</div>
+		</div>
+	}
+}
