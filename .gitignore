@@ -9,4 +9,4 @@
 .idea/
 *.db
 
-/views/base_templ.txt
+/views/*_templ.txt
