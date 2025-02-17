@@ -1,8 +1,92 @@
 package views
 
+import (
+	"fmt"
+	"goDoChores/models"
+)
 
-templ home(name string) {
-    @base("home") {
-        <h2>Hello { name }</h2>
-    }
+templ upcomingChoresWidget(reminders []ChoreReminderListEntry) {
+	<div class="card" data-bs-theme="dark">
+		<h2 class="card-header" style="padding: 1.5rem">
+			Upcoming Chores
+		</h2>
+		<div class="card-body row">
+			for _, el := range reminders {
+				<div class="col-6 col-xl-4 p-2">
+					<div
+						class="chore-card"
+						data-bs-toggle="modal"
+						data-bs-target="#manageChoreModal"
+						data-name={ el.Name }
+						data-id={ fmt.Sprintf("%d", el.ReminderID) }
+						data-date={ el.Date.Format("Monday January 02, 2006") }
+						data-interval={ models.IntervalNames[el.Interval] }
+					>
+						{ el.Name } ({ el.Date.Format("Monday January 02, 2006") })
+					</div>
+				</div>
+			}
+		</div>
+	</div>
+	<div class="modal" tabindex="-1" id="manageChoreModal" data-bs-theme="dark" style="color: white;">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Upcoming Chore</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p>Chore: <span id="manageChoreName"></span></p>
+					<p>Next Date: <span id="manageChoreDate"></span></p>
+					<p>Interval: <span id="manageChoreInterval"></span></p>
+				</div>
+				<div class="modal-footer">
+					<form method="post" class="w-100">
+						<input hidden="hidden" name="reminderID" value="" id="manageChoreID"/>
+						<div class="row">
+							<div class="col-12 col-md-6 px-4 py-2">
+								<button type="submit" name="action" value="delete" class="btn btn-danger">Delete</button>
+							</div>
+							<div class="col-12 col-md-6 px-4 py-2 d-flex">
+								<button type="submit" name="action" value="done" class="btn btn-success ms-auto">Mark as Completed</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ home(reminders []ChoreReminderListEntry) {
+	<!DOCTYPE html>
+	<html lang="en">
+		@head()
+		<body class="min-vh-100" style="background-color: #67806f">
+			@navbar("home")
+			<div class="container main-panel">
+				@upcomingChoresWidget(reminders)
+			</div>
+			@footer() {
+				<script>
+                    const myModalEl = document.querySelector("#manageChoreModal")
+                    myModalEl.addEventListener("show.bs.modal", event => {
+                        const data = event.relatedTarget.dataset
+
+                        const choreNameEl = document.querySelector("#manageChoreName")
+                        if (choreNameEl) choreNameEl.innerText = data.name
+
+                        const choreDateEl = document.querySelector("#manageChoreDate")
+                        if (choreDateEl) choreDateEl.innerText = data.date
+
+                        const choreIntervalEl = document.querySelector("#manageChoreInterval")
+                        if (choreIntervalEl) choreIntervalEl.innerText = data.interval
+
+                        const choreIDEl = document.querySelector("#manageChoreID")
+                        if (choreIDEl) choreIDEl.value = data.id
+                    })
+		        </script>
+			}
+		</body>
+	</html>
 }

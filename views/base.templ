@@ -1,9 +1,6 @@
 package views
 
-
-import (
-    "goDoChores/routes"
-)
+import "goDoChores/routes"
 
 templ navbar(page string) {
 	<nav class="navbar navbar-expand-md bg-body-tertiary" data-bs-theme="dark">
@@ -15,15 +12,24 @@ templ navbar(page string) {
 			<div class="collapse navbar-collapse" id="navbarSupportedContent">
 				<ul class="navbar-nav me-auto mb-2 mb-lg-0">
 					<li class="nav-item">
-						<a class={"nav-link", templ.KV("active", page == "home")} aria-current="page" href={ templ.URL(routes.URLFor("home")) }>Home</a>
+						<a class={ "nav-link", templ.KV("active", page == "home") } aria-current="page" href={ templ.URL(routes.URLFor("home")) }>Home</a>
 					</li>
 					<li class="nav-item dropdown">
-						<a class={"nav-link dropdown-toggle", templ.KV("active", page == "chores")} href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+						<a class={ "nav-link dropdown-toggle", templ.KV("active", page == "chores") } href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
 							Chores
 						</a>
 						<ul class="dropdown-menu">
 							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("choresList")) }>View All</a></li>
 							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("choresCreate")) }>Create New</a></li>
+						</ul>
+					</li>
+					<li class="nav-item dropdown">
+						<a class={ "nav-link dropdown-toggle", templ.KV("active", page == "reminders") } href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+							Reminders
+						</a>
+						<ul class="dropdown-menu">
+							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("remindersList")) }>View All</a></li>
+							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("remindersCreate")) }>Create New</a></li>
 						</ul>
 					</li>
 				</ul>
@@ -68,19 +74,21 @@ templ head() {
 		        border-radius: 1rem;
 		    }
 		</style>
+		{ children... }
 	</head>
 }
 
 templ footer() {
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+	{ children... }
 }
 
 templ base(page string) {
 	<!DOCTYPE html>
 	<html lang="en">
-	    @head()
+		@head()
 		<body class="min-vh-100" style="background-color: #67806f">
-		    @navbar(page)
+			@navbar(page)
 			<div class="container main-panel">
 				{ children... }
 			</div>

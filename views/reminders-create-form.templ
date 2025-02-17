@@ -1,0 +1,41 @@
+package views
+
+import (
+    "goDoChores/models"
+    "fmt"
+)
+
+templ remindersCreatePage(chores []models.Chore, intervals map[string]string) {
+	@base("reminders") {
+		<div class="card" data-bs-theme="dark">
+			<h2 class="card-header" style="padding: 1.5rem">
+				Create Chore Reminder
+			</h2>
+			<div class="card-body">
+				<form class="custom-form" method="post">
+					<div class="form-group">
+						<label for="choreID">Chore</label>
+						<select id="choreID" name="choreID" class="form-control">
+				            for _, el := range chores {
+				                <option value={ fmt.Sprintf("%d", el.ID) }>{ el.Name }</option>
+				            }
+						</select>
+					</div>
+					<div class="form-group">
+						<label for="date">Date</label>
+						<input type="date" class="form-control" id="date" name="date" />
+					</div>
+					<div class="form-group">
+						<label for="interval">Interval</label>
+						<select name="interval" id="interval" class="form-control">
+						    for name, value := range intervals {
+						        <option value={value}>{name}</option>
+						    }
+						</select>
+					</div>
+					<button type="submit" class="btn btn-success btn-lg">Create Chore Reminder</button>
+				</form>
+			</div>
+		</div>
+	}
+}
