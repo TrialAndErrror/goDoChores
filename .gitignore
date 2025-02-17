@@ -11,3 +11,6 @@
 
 /views/*_templ.txt
 /views/*_templ.go
+
+
+.env

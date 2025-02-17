@@ -1,12 +1,14 @@
 package main
 
 import (
+	"github.com/joho/godotenv"
 	"goDoChores/models"
 	"goDoChores/views"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -40,5 +42,15 @@ func main() {
 	r.Post("/reminders/new", views.RemindersCreatePost)
 	r.Get("/reminders/{reminderID}", views.RemindersDetail)
 
-	log.Fatal(http.ListenAndServe(":3000", r))
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	// Get the port from the environment variable
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }
