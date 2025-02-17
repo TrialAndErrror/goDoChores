@@ -12,7 +12,7 @@ templ remindersList(reminders []ChoreReminderListEntry) {
 			</h2>
 			<div class="card-body row">
 				for _, el := range reminders {
-					<div class="col-4 p-2">
+					<div class="col-12 col-md-6 col-xl-4 p-2">
 						<a href={ templ.SafeURL(routes.URLFor("remindersDetail", el.ReminderID)) } class="link-dark">
 							<div class="chore-card">
 								{ el.Name } ({ el.Date.Format("January 02, 2006") })

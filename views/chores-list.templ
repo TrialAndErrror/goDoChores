@@ -13,7 +13,7 @@ templ choresList(chores []models.Chore) {
 			</h2>
 			<div class="card-body row">
 				for _, el := range chores {
-					<div class="col-4 p-2">
+					<div class="col-12 col-md-6 col-xl-4 p-2">
 						<a href={ templ.SafeURL(routes.URLFor("choresDetail", el.ID)) } class="link-dark">
 							<div class="chore-card">
 								{ el.Name }
