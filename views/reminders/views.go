@@ -1,0 +1,12 @@
+package reminders
+
+import "github.com/go-chi/chi/v5"
+
+func RemindersRouter() chi.Router {
+	r := chi.NewRouter()
+	r.Get("/", List)
+	r.Get("/new", CreateGet)
+	r.Post("/new", CreatePost)
+	r.Get("/{reminderID}", RemindersDetail)
+	return r
+}

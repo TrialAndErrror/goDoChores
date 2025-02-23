@@ -1,21 +1,23 @@
-package views
+package chores
 
 import (
+	"goDoChores/models"
 	"goDoChores/routes"
+    "goDoChores/views/base"
 )
 
-templ remindersList(reminders []ChoreReminderListEntry) {
-	@base("reminders") {
+templ choresList(chores []models.Chore) {
+	@views.Base("chores") {
 		<div class="card" data-bs-theme="dark">
 			<h2 class="card-header" style="padding: 1.5rem">
-				All Chore Reminders
+				All Chores
 			</h2>
 			<div class="card-body row">
-				for _, el := range reminders {
+				for _, el := range chores {
 					<div class="col-12 col-md-6 col-xl-4 p-2">
-						<a href={ templ.SafeURL(routes.URLFor("remindersDetail", el.ReminderID)) } class="link-dark">
+						<a href={ templ.SafeURL(routes.URLFor("choresDetail", el.ID)) } class="link-dark">
 							<div class="chore-card">
-								{ el.Name } ({ el.Date.Format("January 02, 2006") })
+								{ el.Name }
 							</div>
 						</a>
 					</div>

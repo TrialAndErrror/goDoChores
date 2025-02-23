@@ -1,11 +1,12 @@
-package views
+package chores
 
 import (
     "goDoChores/models"
+    "goDoChores/views/base"
 )
 
 templ choresDetailPage(chore models.Chore) {
-	@base("chores") {
+	@views.Base("chores") {
 		<div class="card" data-bs-theme="dark">
 			<h2 class="card-header" style="padding: 1.5rem">
 				View Chore
@@ -15,6 +16,12 @@ templ choresDetailPage(chore models.Chore) {
 			    <p>Description: { chore.Description }</p>
 			    <p>Time: { string(chore.Time) }</p>
 			</div>
+		</div>
+		<div class="card-footer">
+		    <div class="d-flex justify-content-between">
+		        <button class="btn btn-lg btn-danger">Delete</button>
+		        <button class="btn btn-lg btn-danger">Delete</button>
+		    </div>
 		</div>
 	}
 }

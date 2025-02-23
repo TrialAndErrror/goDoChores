@@ -1,7 +1,11 @@
-package views
+package chores
+
+import (
+    "goDoChores/views/base"
+)
 
 templ choresCreatePage() {
-	@base("chores") {
+	@views.Base("chores") {
 		<div class="card" data-bs-theme="dark">
 			<h2 class="card-header" style="padding: 1.5rem">
 				Create Chore

@@ -1,11 +1,13 @@
-package views
+package home
 
 import (
 	"fmt"
 	"goDoChores/models"
+	"goDoChores/views/base"
+	"goDoChores/views/reminders"
 )
 
-templ upcomingChoresWidget(reminders []ChoreReminderListEntry) {
+templ upcomingChoresWidget(reminders []reminders.ChoreReminderListEntry) {
 	<div class="card" data-bs-theme="dark">
 		<h2 class="card-header" style="padding: 1.5rem">
 			Upcoming Chores
@@ -58,16 +60,16 @@ templ upcomingChoresWidget(reminders []ChoreReminderListEntry) {
 	</div>
 }
 
-templ home(reminders []ChoreReminderListEntry) {
+templ home(reminders []reminders.ChoreReminderListEntry) {
 	<!DOCTYPE html>
 	<html lang="en">
-		@head()
+		@views.Head()
 		<body class="min-vh-100" style="background-color: #67806f">
-			@navbar("home")
+			@views.Navbar("home")
 			<div class="container main-panel">
 				@upcomingChoresWidget(reminders)
 			</div>
-			@footer() {
+			@views.Footer() {
 				<script>
                     const myModalEl = document.querySelector("#manageChoreModal")
                     myModalEl.addEventListener("show.bs.modal", (event) => {

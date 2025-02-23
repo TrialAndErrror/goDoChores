@@ -6,7 +6,9 @@ import (
 	"github.com/spf13/cobra"
 	"goDoChores/auth"
 	"goDoChores/models"
-	"goDoChores/views"
+	"goDoChores/views/chores"
+	"goDoChores/views/home"
+	"goDoChores/views/reminders"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"log"
@@ -51,24 +53,16 @@ func runServer() {
 		r.Use(jwtauth.Verifier(tokenAuth))
 		r.Use(auth.Authenticator(tokenAuth))
 
-		r.Get("/", views.Home)
-		r.Post("/", views.HomePost)
+		r.Mount("/", home.HomeRouter())
+		r.Mount("/chores", chores.ChoresRouter())
+		r.Mount("/reminders", reminders.RemindersRouter())
 
-		r.Get("/chores/", views.ChoresList)
-		r.Get("/chores/new", views.ChoresCreateGet)
-		r.Post("/chores/new", views.ChoresCreatePost)
-		r.Get("/chores/{choreID}", views.ChoresDetail)
-
-		r.Get("/reminders/", views.RemindersList)
-		r.Get("/reminders/new", views.RemindersCreateGet)
-		r.Post("/reminders/new", views.RemindersCreatePost)
-		r.Get("/reminders/{reminderID}", views.RemindersDetail)
 		r.Post("/logout", auth.LogoutPost)
 	})
 
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error loading .env file")
+		fmt.Println("Error loading .env file; defaulting to environment variables.")
 	}
 
 	// Get the port from the environment variable
@@ -76,6 +70,7 @@ func runServer() {
 	if port == "" {
 		port = "3000"
 	}
+	fmt.Println("Serving on port " + port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }
 

@@ -1,11 +1,12 @@
-package views
+package reminders
 
 import (
     "goDoChores/models"
+    "goDoChores/views/base"
 )
 
 templ remindersDetailPage(chore models.Chore, reminder models.ChoreReminder) {
-	@base("reminders") {
+	@views.Base("reminders") {
 		<div class="card" data-bs-theme="dark">
 			<h2 class="card-header" style="padding: 1.5rem">
 				View Chore Reminder
