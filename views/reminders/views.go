@@ -7,6 +7,7 @@ func RemindersRouter() chi.Router {
 	r.Get("/", List)
 	r.Get("/new", CreateGet)
 	r.Post("/new", CreatePost)
-	r.Get("/{reminderID}", RemindersDetail)
+	r.Get("/{reminderID}/", DetailGet)
+	r.Post("/{reminderID}/", DetailPost)
 	return r
 }

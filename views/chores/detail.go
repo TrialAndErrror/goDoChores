@@ -5,12 +5,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"goDoChores/auth"
 	"goDoChores/models"
+	"goDoChores/routes"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"net/http"
 )
 
-func Detail(w http.ResponseWriter, r *http.Request) {
+func DetailGet(w http.ResponseWriter, r *http.Request) {
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -31,4 +32,39 @@ func Detail(w http.ResponseWriter, r *http.Request) {
 	if renderErr != nil {
 		http.Error(w, renderErr.Error(), http.StatusInternalServerError)
 	}
+}
+
+func DetailPost(w http.ResponseWriter, r *http.Request) {
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	choreID := chi.URLParam(r, "choreID")
+	var chore models.Chore
+	queryResult := db.Where(models.Chore{UserID: userID}).First(&chore, choreID)
+	if queryResult.Error != nil {
+		http.Error(w, queryResult.Error.Error(), http.StatusInternalServerError)
+	}
+
+	parseErr := r.ParseForm()
+	if parseErr != nil {
+		http.Error(w, parseErr.Error(), http.StatusInternalServerError)
+	}
+
+	if r.PostFormValue("action") == "delete" {
+		db.Delete(&chore)
+		http.Redirect(w, r, routes.URLFor("choresList"), http.StatusFound)
+	}
+
+	component := choresDetailPage(chore)
+	renderErr := component.Render(context.Background(), w)
+	if renderErr != nil {
+		http.Error(w, renderErr.Error(), http.StatusInternalServerError)
+	}
+
 }

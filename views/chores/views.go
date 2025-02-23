@@ -8,7 +8,8 @@ func ChoresRouter() chi.Router {
 	r.Get("/", List)
 	r.Get("/new", CreateGet)
 	r.Post("/new", CreatePost)
-	r.Get("/{choreID}", Detail)
+	r.Get("/{choreID}/", DetailGet)
+	r.Post("/{choreID}/", DetailPost)
 
 	return r
 }

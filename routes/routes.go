@@ -7,10 +7,10 @@ var Routes = map[string]string{
 	"home":            "/",
 	"choresList":      "/chores/",
 	"choresCreate":    "/chores/new",
-	"choresDetail":    "/chores/%d",
+	"choresDetail":    "/chores/%d/",
 	"remindersList":   "/reminders/",
 	"remindersCreate": "/reminders/new",
-	"remindersDetail": "/reminders/%d",
+	"remindersDetail": "/reminders/%d/",
 	"logout":          "/logout",
 }
 

@@ -2,9 +2,9 @@ package reminders
 
 import (
     "goDoChores/models"
+    "goDoChores/routes"
     "goDoChores/views/base"
 )
-
 templ remindersDetailPage(chore models.Chore, reminder models.ChoreReminder) {
 	@views.Base("reminders") {
 		<div class="card" data-bs-theme="dark">
@@ -12,9 +12,36 @@ templ remindersDetailPage(chore models.Chore, reminder models.ChoreReminder) {
 				View Chore Reminder
 			</h2>
 			<div class="card-body d-flex flex-column">
-			    <p>Chore: { chore.Name }</p>
-			    <p>Next Date: { reminder.Date.Format("January 02, 2006") }</p>
-			    <p>Interval: { models.IntervalNames[reminder.Interval] }</p>
+				<p>Chore: { chore.Name }</p>
+				<p>Next Date: { reminder.Date.Format("January 02, 2006") }</p>
+				<p>Interval: { models.IntervalNames[reminder.Interval] }</p>
+			</div>
+			<div class="card-footer mt-3">
+				<div class="d-flex justify-content-between">
+					<a href={templ.URL(routes.URLFor("choresList"))} class="btn btn-lg btn-outline-secondary">Back</a>
+					<button class="btn btn-lg btn-danger" data-bs-toggle="modal" data-bs-target="#deleteChoreModal">Delete</button>
+				</div>
+			</div>
+		</div>
+		<div class="modal" tabindex="-1" id="deleteChoreModal" data-bs-theme="dark" style="color: white;">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Delete Chore Reminder</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<p>Are you sure you're like to delete this reminder: </p>
+						<p>{ chore.Name }</p>
+				        <p>Interval: { models.IntervalNames[reminder.Interval] }</p>
+					</div>
+					<div class="modal-footer">
+						<form method="post" class="w-100 d-flex justify-content-between">
+							<button type="button" data-bs-dismiss="modal" class="btn btn-outline-secondary">Cancel</button>
+							<button type="submit" name="action" value="delete" class="btn btn-danger">Delete</button>
+						</form>
+					</div>
+				</div>
 			</div>
 		</div>
 	}
