@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/spf13/cobra"
 	"goDoChores/auth"
 	"goDoChores/models"
 	"goDoChores/views"
@@ -20,17 +21,11 @@ import (
 var tokenAuth *jwtauth.JWTAuth
 
 func init() {
+	// Initialise JWT token auth
 	tokenAuth = jwtauth.New("HS256", []byte("secret"), nil)
-
-	_, tokenString, _ := tokenAuth.Encode(map[string]interface{}{"user_id": 123})
-	fmt.Printf("DEBUG: a sample jwt is %s\n\n", tokenString)
-	err := auth.MakeSampleUser()
-	if err != nil {
-		return
-	}
 }
 
-func main() {
+func runServer() {
 	db, dbConnectErr := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if dbConnectErr != nil {
 		panic("failed to connect database")
@@ -68,6 +63,7 @@ func main() {
 		r.Get("/reminders/new", views.RemindersCreateGet)
 		r.Post("/reminders/new", views.RemindersCreatePost)
 		r.Get("/reminders/{reminderID}", views.RemindersDetail)
+		r.Post("/logout", auth.LogoutPost)
 	})
 
 	err := godotenv.Load()
@@ -81,4 +77,26 @@ func main() {
 		port = "3000"
 	}
 	log.Fatal(http.ListenAndServe(":"+port, r))
+}
+
+func main() {
+	// Define the root command (runs the server by default)
+	var rootCmd = &cobra.Command{
+		Use:   "myapp",
+		Short: "My Go App CLI and Server",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("Starting the server...")
+			runServer()
+		},
+	}
+
+	// Add subcommands
+	rootCmd.AddCommand(auth.CreateUserCmd)
+
+	// Execute the CLI
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 }

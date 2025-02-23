@@ -12,25 +12,6 @@ import (
 	"time"
 )
 
-func MakeSampleUser() error {
-	db, dbErr := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if dbErr != nil {
-		return dbErr
-	}
-	var user models.User
-	tx := db.Where(models.User{Username: "wade"}).FirstOrCreate(&user)
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	passwordErr := user.SetPassword("pass")
-	if passwordErr != nil {
-		return passwordErr
-	}
-
-	return nil
-}
-
 var tokenAuth *jwtauth.JWTAuth
 
 func LoginUser(username string, password string) (string, error) {
@@ -95,4 +76,21 @@ func LoginPost(w http.ResponseWriter, r *http.Request) {
 
 	// Redirect the user to the dashboard or another protected page.
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func LogoutPost(w http.ResponseWriter, r *http.Request) {
+	// Create an expired cookie with the same name
+	cookie := http.Cookie{
+		Name:     "jwt", // Cookie name must match the one used in login
+		Value:    "",    // Empty value
+		Path:     "/",
+		Expires:  time.Unix(0, 0), // Set expiry in the past
+		HttpOnly: true,
+		Secure:   false, // Set to true in production with HTTPS
+		SameSite: http.SameSiteStrictMode,
+	}
+	http.SetCookie(w, &cookie)
+
+	// Redirect to the login page or respond with a success message
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
