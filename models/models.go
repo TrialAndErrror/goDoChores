@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"goDoChores/utils"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"net/url"
 	"strconv"
@@ -14,9 +15,12 @@ type Chore struct {
 	Name, Description string
 	Time              int
 	Reminders         []ChoreReminder `gorm:"foreignKey:ChoreID"`
+
+	UserID uint
+	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
-func ChoreFromForm(data url.Values) (Chore, error) {
+func ChoreFromForm(data url.Values, userID uint) (Chore, error) {
 	timeString := data.Get("time")
 	timeValue, timeParseErr := strconv.Atoi(timeString)
 	if timeParseErr != nil {
@@ -27,6 +31,7 @@ func ChoreFromForm(data url.Values) (Chore, error) {
 		Name:        data.Get("name"),
 		Description: data.Get("description"),
 		Time:        timeValue,
+		UserID:      userID,
 	}
 	return chore, nil
 }
@@ -36,6 +41,9 @@ type ChoreReminder struct {
 	ChoreID  uint64
 	Date     time.Time
 	Interval string
+
+	UserID uint
+	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 var ValidIntervals = map[string]string{
@@ -48,7 +56,7 @@ var ValidIntervals = map[string]string{
 
 var IntervalNames = utils.ReverseMap(ValidIntervals)
 
-func ChoreReminderFromForm(data url.Values) (ChoreReminder, error) {
+func ChoreReminderFromForm(data url.Values, userID uint) (ChoreReminder, error) {
 	dateString := data.Get("date")
 	dateFormatString := "2006-01-02"
 	date, dateParseErr := time.Parse(dateFormatString, dateString)
@@ -72,6 +80,7 @@ func ChoreReminderFromForm(data url.Values) (ChoreReminder, error) {
 		ChoreID:  choreID,
 		Date:     date,
 		Interval: interval,
+		UserID:   userID,
 	}
 	return reminder, nil
 
@@ -90,4 +99,28 @@ func GetNextReminderDate(reminder ChoreReminder) (newDate time.Time, error error
 	default:
 		return time.Time{}, errors.New("invalid interval")
 	}
+}
+
+type User struct {
+	gorm.Model
+	Username     string `gorm:"uniqueIndex;not null"`
+	Email        string `gorm:"uniqueIndex;not null"`
+	PasswordHash string `gorm:"not null"`
+
+	Chores         []Chore
+	ChoreReminders []ChoreReminder
+}
+
+func (u *User) SetPassword(password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	u.PasswordHash = string(hash)
+	return nil
+}
+
+func (u *User) CheckPassword(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
+	return err == nil
 }

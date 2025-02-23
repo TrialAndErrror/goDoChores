@@ -70,7 +70,7 @@ templ home(reminders []ChoreReminderListEntry) {
 			@footer() {
 				<script>
                     const myModalEl = document.querySelector("#manageChoreModal")
-                    myModalEl.addEventListener("show.bs.modal", event => {
+                    myModalEl.addEventListener("show.bs.modal", (event) => {
                         const data = event.relatedTarget.dataset
 
                         const choreNameEl = document.querySelector("#manageChoreName")

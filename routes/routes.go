@@ -3,6 +3,7 @@ package routes
 import "fmt"
 
 var Routes = map[string]string{
+	"login":           "/login",
 	"home":            "/",
 	"choresList":      "/chores/",
 	"choresCreate":    "/chores/new",

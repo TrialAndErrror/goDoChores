@@ -51,7 +51,7 @@ func choresList(chores []models.Chore) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			for _, el := range chores {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"col-4 p-2\"><a href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"col-12 col-md-6 col-xl-4 p-2\"><a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
