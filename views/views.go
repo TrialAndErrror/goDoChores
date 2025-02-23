@@ -3,6 +3,7 @@ package views
 import (
 	"context"
 	"github.com/go-chi/chi/v5"
+	"goDoChores/auth"
 	"goDoChores/models"
 	"goDoChores/routes"
 	"gorm.io/driver/sqlite"
@@ -13,14 +14,18 @@ import (
 )
 
 func Home(w http.ResponseWriter, r *http.Request) {
-	reminders, reminderListErr := getChoreReminderList()
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	reminders, reminderListErr := getChoreReminderList(userID)
 	if reminderListErr != nil {
 		http.Error(w, reminderListErr.Error(), http.StatusInternalServerError)
 	}
 	component := home(reminders)
-	err := component.Render(context.Background(), w)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	renderErr := component.Render(context.Background(), w)
+	if renderErr != nil {
+		http.Error(w, renderErr.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -43,7 +48,12 @@ func HomePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var reminder models.ChoreReminder
-	reminderQueryResult := db.First(&reminder, reminderID)
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	reminderQueryResult := db.Where(models.ChoreReminder{UserID: userID}).First(&reminder, reminderID)
 	if reminderQueryResult.Error != nil {
 		http.Error(w, reminderQueryResult.Error.Error(), http.StatusInternalServerError)
 		return
@@ -74,20 +84,24 @@ func HomePost(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func getAllChores() ([]models.Chore, error) {
+func getAllChores(userID uint) ([]models.Chore, error) {
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
 
 	var chores []models.Chore
-	db.Find(&chores)
+	db.Where(models.Chore{UserID: userID}).Find(&chores)
 
 	return chores, nil
 }
 
 func ChoresList(w http.ResponseWriter, r *http.Request) {
-	chores, err := getAllChores()
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	chores, err := getAllChores(userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -119,7 +133,12 @@ func ChoresCreatePost(w http.ResponseWriter, r *http.Request) {
 	if parseError != nil {
 		http.Error(w, parseError.Error(), http.StatusInternalServerError)
 	}
-	chore, choreCreateErr := models.ChoreFromForm(r.PostForm)
+
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	chore, choreCreateErr := models.ChoreFromForm(r.PostForm, userID)
 	if choreCreateErr != nil {
 		http.Error(w, choreCreateErr.Error(), http.StatusInternalServerError)
 	}
@@ -133,9 +152,13 @@ func ChoresDetail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 	choreID := chi.URLParam(r, "choreID")
 	var chore models.Chore
-	queryResult := db.First(&chore, choreID)
+	queryResult := db.Where(models.Chore{UserID: userID}).First(&chore, choreID)
 	if queryResult.Error != nil {
 		http.Error(w, queryResult.Error.Error(), http.StatusInternalServerError)
 	}
@@ -154,19 +177,24 @@ type ChoreReminderListEntry struct {
 	Name       string
 }
 
-func getChoreReminderList() ([]ChoreReminderListEntry, error) {
+func getChoreReminderList(userID uint) ([]ChoreReminderListEntry, error) {
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
 
 	var reminders []ChoreReminderListEntry
-	db.Model(&models.ChoreReminder{}).Select("chore_reminders.id as reminder_id, chore_reminders.interval,chore_reminders.date, chores.id as chore_id, chores.name").Joins("left join chores on chore_reminders.chore_id = chores.id").Scan(&reminders)
+	db.Model(&models.ChoreReminder{}).Select("chore_reminders.id as reminder_id, chore_reminders.interval,chore_reminders.date, chores.id as chore_id, chores.name").Joins("left join chores on chore_reminders.chore_id = chores.id").Where("chore_reminders.user_id = ?", userID).Scan(&reminders)
 	return reminders, nil
 }
 
 func RemindersList(w http.ResponseWriter, r *http.Request) {
-	reminders, err := getChoreReminderList()
+
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	reminders, err := getChoreReminderList(userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -180,7 +208,12 @@ func RemindersList(w http.ResponseWriter, r *http.Request) {
 }
 
 func RemindersCreateGet(w http.ResponseWriter, r *http.Request) {
-	chores, err := getAllChores()
+
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	chores, err := getAllChores(userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -201,7 +234,12 @@ func RemindersCreatePost(w http.ResponseWriter, r *http.Request) {
 	if parseError != nil {
 		http.Error(w, parseError.Error(), http.StatusInternalServerError)
 	}
-	choreReminder, choreCreateErr := models.ChoreReminderFromForm(r.PostForm)
+
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	choreReminder, choreCreateErr := models.ChoreReminderFromForm(r.PostForm, userID)
 	if choreCreateErr != nil {
 		http.Error(w, choreCreateErr.Error(), http.StatusInternalServerError)
 	}
@@ -215,9 +253,14 @@ func RemindersDetail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 	reminderID := chi.URLParam(r, "reminderID")
 	var reminder models.ChoreReminder
-	reminderQueryResult := db.First(&reminder, reminderID)
+	reminderQueryResult := db.Where(models.ChoreReminder{UserID: userID}).First(&reminder, reminderID)
 	if reminderQueryResult.Error != nil {
 		http.Error(w, reminderQueryResult.Error.Error(), http.StatusInternalServerError)
 	}
@@ -240,13 +283,18 @@ func RemindersEditGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	chores, err := getAllChores()
+
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	chores, err := getAllChores(userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	reminderID := chi.URLParam(r, "reminderID")
 	var reminder models.ChoreReminder
-	reminderQueryResult := db.First(&reminder, reminderID)
+	reminderQueryResult := db.Where(models.ChoreReminder{UserID: userID}).First(&reminder, reminderID)
 	if reminderQueryResult.Error != nil {
 		http.Error(w, reminderQueryResult.Error.Error(), http.StatusInternalServerError)
 	}
@@ -267,7 +315,12 @@ func RemindersEditPost(w http.ResponseWriter, r *http.Request) {
 	if parseError != nil {
 		http.Error(w, parseError.Error(), http.StatusInternalServerError)
 	}
-	choreReminder, choreCreateErr := models.ChoreReminderFromForm(r.PostForm)
+
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	choreReminder, choreCreateErr := models.ChoreReminderFromForm(r.PostForm, userID)
 	if choreCreateErr != nil {
 		http.Error(w, choreCreateErr.Error(), http.StatusInternalServerError)
 	}
