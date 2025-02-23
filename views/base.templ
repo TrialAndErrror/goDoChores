@@ -33,6 +33,14 @@ templ navbar(page string) {
 						</ul>
 					</li>
 				</ul>
+
+				<ul class="navbar-nav mb-2 mb-lg-0">
+					<li class="nav-item">
+					    <form method="post" action={ templ.URL(routes.URLFor("logout")) }>
+						    <button class="nav-link" aria-current="page" type="submit">Logout</button>
+					    </form>
+					</li>
+				</ul>
 			</div>
 		</div>
 	</nav>

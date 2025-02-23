@@ -63,6 +63,7 @@ func runServer() {
 		r.Get("/reminders/new", views.RemindersCreateGet)
 		r.Post("/reminders/new", views.RemindersCreatePost)
 		r.Get("/reminders/{reminderID}", views.RemindersDetail)
+		r.Post("/logout", auth.LogoutPost)
 	})
 
 	err := godotenv.Load()

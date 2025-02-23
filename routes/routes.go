@@ -11,6 +11,7 @@ var Routes = map[string]string{
 	"remindersList":   "/reminders/",
 	"remindersCreate": "/reminders/new",
 	"remindersDetail": "/reminders/%d",
+	"logout":          "/logout",
 }
 
 func URLFor(route string, args ...any) string {

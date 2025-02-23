@@ -77,3 +77,20 @@ func LoginPost(w http.ResponseWriter, r *http.Request) {
 	// Redirect the user to the dashboard or another protected page.
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+func LogoutPost(w http.ResponseWriter, r *http.Request) {
+	// Create an expired cookie with the same name
+	cookie := http.Cookie{
+		Name:     "jwt", // Cookie name must match the one used in login
+		Value:    "",    // Empty value
+		Path:     "/",
+		Expires:  time.Unix(0, 0), // Set expiry in the past
+		HttpOnly: true,
+		Secure:   false, // Set to true in production with HTTPS
+		SameSite: http.SameSiteStrictMode,
+	}
+	http.SetCookie(w, &cookie)
+
+	// Redirect to the login page or respond with a success message
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}

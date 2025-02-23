@@ -56,7 +56,6 @@ var CreateUserCmd = &cobra.Command{
 				Username: username,
 				Email:    email,
 			}
-			db.Create(&user)
 
 			if err := user.SetPassword(password); err != nil {
 				log.Fatal("Error hashing password:", err)
