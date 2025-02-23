@@ -12,25 +12,6 @@ import (
 	"time"
 )
 
-func MakeSampleUser() error {
-	db, dbErr := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if dbErr != nil {
-		return dbErr
-	}
-	var user models.User
-	tx := db.Where(models.User{Username: "wade"}).FirstOrCreate(&user)
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	passwordErr := user.SetPassword("pass")
-	if passwordErr != nil {
-		return passwordErr
-	}
-
-	return nil
-}
-
 var tokenAuth *jwtauth.JWTAuth
 
 func LoginUser(username string, password string) (string, error) {
