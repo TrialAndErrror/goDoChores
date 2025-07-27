@@ -3,42 +3,42 @@ package views
 import "goDoChores/routes"
 
 templ Navbar(page string) {
-	<nav class="navbar navbar-expand-md bg-body-tertiary" data-bs-theme="dark">
+	<nav class="navbar navbar-expand-md custom-navbar">
 		<div class="container-fluid">
-			<a class="navbar-brand" href="#"></a>
-			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+			<a class="navbar-brand custom-brand" href={ templ.URL(routes.URLFor("home")) }>Go Do Chores</a>
+			<button class="navbar-toggler custom-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
 				<span class="navbar-toggler-icon"></span>
 			</button>
 			<div class="collapse navbar-collapse" id="navbarSupportedContent">
 				<ul class="navbar-nav me-auto mb-2 mb-lg-0">
 					<li class="nav-item">
-						<a class={ "nav-link", templ.KV("active", page == "home") } aria-current="page" href={ templ.URL(routes.URLFor("home")) }>Home</a>
+						<a class={ "nav-link custom-nav-link", templ.KV("active", page == "home") } aria-current="page" href={ templ.URL(routes.URLFor("home")) }>Home</a>
 					</li>
 					<li class="nav-item dropdown">
-						<a class={ "nav-link dropdown-toggle", templ.KV("active", page == "chores") } href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+						<a class={ "nav-link dropdown-toggle custom-nav-link", templ.KV("active", page == "chores") } href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
 							Chores
 						</a>
-						<ul class="dropdown-menu">
-							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("choresList")) }>View All</a></li>
-							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("choresCreate")) }>Create New</a></li>
+						<ul class="dropdown-menu custom-dropdown">
+							<li><a class="dropdown-item custom-dropdown-item" href={ templ.URL(routes.URLFor("choresList")) }>View All</a></li>
+							<li><a class="dropdown-item custom-dropdown-item" href={ templ.URL(routes.URLFor("choresCreate")) }>Create New</a></li>
 						</ul>
 					</li>
 					<li class="nav-item dropdown">
-						<a class={ "nav-link dropdown-toggle", templ.KV("active", page == "reminders") } href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+						<a class={ "nav-link dropdown-toggle custom-nav-link", templ.KV("active", page == "reminders") } href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
 							Reminders
 						</a>
-						<ul class="dropdown-menu">
-							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("remindersList")) }>View All</a></li>
-							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("remindersCreate")) }>Create New</a></li>
+						<ul class="dropdown-menu custom-dropdown">
+							<li><a class="dropdown-item custom-dropdown-item" href={ templ.URL(routes.URLFor("remindersList")) }>View All</a></li>
+							<li><a class="dropdown-item custom-dropdown-item" href={ templ.URL(routes.URLFor("remindersCreate")) }>Create New</a></li>
 						</ul>
 					</li>
 					<li class="nav-item dropdown">
-						<a class={ "nav-link dropdown-toggle", templ.KV("active", page == "tasks") } href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+						<a class={ "nav-link dropdown-toggle custom-nav-link", templ.KV("active", page == "tasks") } href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
 							Tasks
 						</a>
-						<ul class="dropdown-menu">
-							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("tasksList")) }>View All</a></li>
-							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("tasksCreate")) }>Create New</a></li>
+						<ul class="dropdown-menu custom-dropdown">
+							<li><a class="dropdown-item custom-dropdown-item" href={ templ.URL(routes.URLFor("tasksList")) }>View All</a></li>
+							<li><a class="dropdown-item custom-dropdown-item" href={ templ.URL(routes.URLFor("tasksCreate")) }>Create New</a></li>
 						</ul>
 					</li>
 				</ul>
@@ -46,7 +46,7 @@ templ Navbar(page string) {
 				<ul class="navbar-nav mb-2 mb-lg-0">
 					<li class="nav-item">
 					    <form method="post" action={ templ.URL(routes.URLFor("logout")) }>
-						    <button class="nav-link" aria-current="page" type="submit">Logout</button>
+						    <button class="nav-link custom-nav-link custom-logout-btn" aria-current="page" type="submit">Logout</button>
 					    </form>
 					</li>
 				</ul>
@@ -61,38 +61,436 @@ templ Head() {
 		<meta name="viewport" content="width=device-width, initial-scale=1"/>
 		<title>Go Do Chores</title>
 		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"/>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 		<style>
-		    .main-panel {
-		        padding: 2rem 1rem;
-		    }
+			:root {
+				/* Primary Color Palette */
+				--primary-green: #67806f;
+				--primary-green-dark: #4a5d4f;
+				--primary-green-light: #8ba08c;
+				--primary-green-lighter: #a8c4a9;
+				
+				/* Neutral Colors */
+				--neutral-black: #1a1a1a;
+				--neutral-dark: #2d2d2d;
+				--neutral-gray: #4a4a4a;
+				--neutral-light: #6b6b6b;
+				--neutral-lighter: #9ca3af;
+				--neutral-white: #ffffff;
+				
+				/* Accent Colors */
+				--accent-gold: #d4af37;
+				--accent-gold-light: #e6c866;
+				--accent-red: #dc3545;
+				--accent-red-light: #e74c3c;
+				--accent-blue: #3498db;
+				--accent-blue-light: #5dade2;
+				
+				/* Background Colors */
+				--bg-primary: var(--primary-green);
+				--bg-secondary: var(--neutral-dark);
+				--bg-card: var(--neutral-black);
+				--bg-navbar: var(--neutral-black);
+				
+				/* Text Colors */
+				--text-primary: var(--neutral-white);
+				--text-secondary: var(--neutral-lighter);
+				--text-muted: var(--neutral-light);
+				
+				/* Border Colors */
+				--border-color: var(--neutral-gray);
+				--border-light: var(--neutral-light);
+			}
 
-		    .custom-form {
-		        display: flex;
-		        flex-direction: column;
-		        gap: 3rem;
-		        padding: 1rem;
-		    }
+			* {
+				font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+			}
 
-		    .card-header {
-		        padding: 1.5rem;
-		    }
+			body {
+				background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
+				min-height: 100vh;
+				color: var(--text-primary);
+			}
 
-		    .card {
-		        border-radius: 1rem;
-		    }
+			/* Navbar Styling */
+			.custom-navbar {
+				background-color: var(--bg-navbar) !important;
+				border-bottom: 1px solid var(--border-color);
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+			}
 
-		    .chore-card {
-		        background-color: rgb(113, 112, 111) !important;
-		        display: flex;
-		        justify-content: center;
-		        align-items: center;
-		        padding: 1rem;
-		        margin: 1rem;
-		        border-radius: 1rem;
-		    }
-		    label {
-		        margin-bottom: 1rem;
-		    }
+			.custom-brand {
+				color: var(--accent-gold) !important;
+				font-weight: 700;
+				font-size: 1.5rem;
+				text-decoration: none;
+			}
+
+			.custom-brand:hover {
+				color: var(--accent-gold-light) !important;
+			}
+
+			.custom-nav-link {
+				color: var(--text-secondary) !important;
+				font-weight: 500;
+				transition: all 0.3s ease;
+				padding: 0.5rem 1rem !important;
+				border-radius: 0.5rem;
+				margin: 0 0.25rem;
+			}
+
+			.custom-nav-link:hover,
+			.custom-nav-link.active {
+				color: var(--text-primary) !important;
+				background-color: var(--primary-green) !important;
+			}
+
+			.custom-toggler {
+				border-color: var(--border-color) !important;
+			}
+
+			.custom-toggler:focus {
+				box-shadow: 0 0 0 0.2rem rgba(103, 128, 111, 0.25) !important;
+			}
+
+			.custom-dropdown {
+				background-color: var(--bg-card) !important;
+				border: 1px solid var(--border-color) !important;
+				box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+			}
+
+			.custom-dropdown-item {
+				color: var(--text-secondary) !important;
+				font-weight: 500;
+				padding: 0.75rem 1rem !important;
+				transition: all 0.3s ease;
+			}
+
+			.custom-dropdown-item:hover {
+				background-color: var(--primary-green) !important;
+				color: var(--text-primary) !important;
+			}
+
+			.custom-logout-btn {
+				background: none !important;
+				border: none !important;
+				color: var(--accent-red) !important;
+			}
+
+			.custom-logout-btn:hover {
+				color: var(--accent-red-light) !important;
+				background-color: rgba(220, 53, 69, 0.1) !important;
+			}
+
+			/* Card Styling */
+			.card {
+				background-color: var(--bg-card) !important;
+				border: 1px solid var(--border-color) !important;
+				border-radius: 1rem !important;
+				box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+				transition: all 0.3s ease;
+				color: var(--text-primary) !important;
+			}
+
+			.card:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2) !important;
+			}
+
+			.card-header {
+				background-color: var(--bg-secondary) !important;
+				border-bottom: 1px solid var(--border-color) !important;
+				border-radius: 1rem 1rem 0 0 !important;
+				padding: 1.5rem !important;
+				font-weight: 600;
+				color: var(--text-primary) !important;
+			}
+
+			.card-body {
+				padding: 1.5rem !important;
+				color: var(--text-primary) !important;
+			}
+
+			.card-footer {
+				background-color: var(--bg-secondary) !important;
+				border-top: 1px solid var(--border-color) !important;
+				border-radius: 0 0 1rem 1rem !important;
+				padding: 1rem 1.5rem !important;
+				color: var(--text-primary) !important;
+			}
+
+			/* Card text elements */
+			.card-title {
+				color: var(--text-primary) !important;
+			}
+
+			.card-text {
+				color: var(--text-secondary) !important;
+			}
+
+			.card-text small {
+				color: var(--text-muted) !important;
+			}
+
+			.card-text strong {
+				color: var(--text-primary) !important;
+			}
+
+			/* Button Styling */
+			.btn {
+				font-weight: 500;
+				padding: 0.75rem 1.5rem;
+				border-radius: 0.5rem;
+				transition: all 0.3s ease;
+				border: 2px solid transparent;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+				position: relative;
+				overflow: hidden;
+			}
+
+			.btn::before {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: -100%;
+				width: 100%;
+				height: 100%;
+				background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+				transition: left 0.5s;
+			}
+
+			.btn:hover::before {
+				left: 100%;
+			}
+
+			.btn-primary {
+				background-color: var(--primary-green) !important;
+				border-color: var(--primary-green-light) !important;
+				color: var(--text-primary) !important;
+				box-shadow: 0 4px 12px rgba(103, 128, 111, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+			}
+
+			.btn-primary:hover {
+				background-color: var(--primary-green-dark) !important;
+				border-color: var(--primary-green) !important;
+				transform: translateY(-2px);
+				box-shadow: 0 6px 20px rgba(103, 128, 111, 0.4), 0 4px 8px rgba(0, 0, 0, 0.3);
+			}
+
+			.btn-secondary {
+				background-color: var(--neutral-gray) !important;
+				border-color: var(--neutral-light) !important;
+				color: var(--text-primary) !important;
+				box-shadow: 0 4px 12px rgba(74, 74, 74, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+			}
+
+			.btn-secondary:hover {
+				background-color: var(--neutral-light) !important;
+				border-color: var(--neutral-lighter) !important;
+				transform: translateY(-2px);
+				box-shadow: 0 6px 20px rgba(74, 74, 74, 0.4), 0 4px 8px rgba(0, 0, 0, 0.3);
+			}
+
+			.btn-outline-primary {
+				background-color: transparent !important;
+				color: var(--primary-green) !important;
+				border-color: var(--primary-green) !important;
+				box-shadow: 0 4px 12px rgba(103, 128, 111, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+			}
+
+			.btn-outline-primary:hover {
+				background-color: var(--primary-green) !important;
+				color: var(--text-primary) !important;
+				border-color: var(--primary-green-light) !important;
+				transform: translateY(-2px);
+				box-shadow: 0 6px 20px rgba(103, 128, 111, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+			}
+
+			.btn-outline-secondary {
+				background-color: transparent !important;
+				color: var(--neutral-lighter) !important;
+				border-color: var(--neutral-lighter) !important;
+				box-shadow: 0 4px 12px rgba(156, 163, 175, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+			}
+
+			.btn-outline-secondary:hover {
+				background-color: var(--neutral-lighter) !important;
+				color: var(--neutral-black) !important;
+				border-color: var(--neutral-white) !important;
+				transform: translateY(-2px);
+				box-shadow: 0 6px 20px rgba(156, 163, 175, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+			}
+
+			.btn-success {
+				background-color: var(--primary-green) !important;
+				border-color: var(--primary-green-light) !important;
+				color: var(--text-primary) !important;
+				box-shadow: 0 4px 12px rgba(103, 128, 111, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+			}
+
+			.btn-success:hover {
+				background-color: var(--primary-green-dark) !important;
+				border-color: var(--primary-green) !important;
+				transform: translateY(-2px);
+				box-shadow: 0 6px 20px rgba(103, 128, 111, 0.4), 0 4px 8px rgba(0, 0, 0, 0.3);
+			}
+
+			.btn-danger {
+				background-color: var(--accent-red) !important;
+				border-color: var(--accent-red-light) !important;
+				color: var(--text-primary) !important;
+				box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+			}
+
+			.btn-danger:hover {
+				background-color: var(--accent-red-light) !important;
+				border-color: var(--accent-red) !important;
+				transform: translateY(-2px);
+				box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4), 0 4px 8px rgba(0, 0, 0, 0.3);
+			}
+
+			/* Small button variants */
+			.btn-sm {
+				padding: 0.5rem 1rem;
+				font-size: 0.875rem;
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+			}
+
+			.btn-sm:hover {
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+			}
+
+			/* Form Styling */
+			.form-control {
+				background-color: var(--bg-secondary) !important;
+				border: 1px solid var(--border-color) !important;
+				color: var(--text-primary) !important;
+				border-radius: 0.5rem;
+				padding: 0.75rem 1rem;
+				font-weight: 400;
+				transition: all 0.3s ease;
+			}
+
+			.form-control:focus {
+				background-color: var(--bg-secondary) !important;
+				border-color: var(--primary-green) !important;
+				color: var(--text-primary) !important;
+				box-shadow: 0 0 0 0.2rem rgba(103, 128, 111, 0.25) !important;
+			}
+
+			.form-control::placeholder {
+				color: var(--text-muted) !important;
+			}
+
+			.form-label {
+				color: var(--text-primary) !important;
+				font-weight: 500;
+				margin-bottom: 0.75rem;
+			}
+
+			/* Ensure all text in dark backgrounds is light */
+			.card h1, .card h2, .card h3, .card h4, .card h5, .card h6 {
+				color: var(--text-primary) !important;
+			}
+
+			.card p {
+				color: var(--text-secondary) !important;
+			}
+
+			/* Ensure buttons in cards have proper contrast */
+			.card .btn {
+				color: var(--text-primary) !important;
+			}
+
+			/* Chore Card Styling */
+			.chore-card {
+				background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--neutral-gray) 100%) !important;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				padding: 1.5rem;
+				margin: 0.5rem;
+				border-radius: 1rem;
+				border: 1px solid var(--border-color);
+				color: var(--text-primary);
+				font-weight: 500;
+				text-decoration: none;
+				transition: all 0.3s ease;
+				min-height: 80px;
+			}
+
+			.chore-card:hover {
+				background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%) !important;
+				transform: translateY(-2px);
+				box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+				color: var(--text-primary);
+				text-decoration: none;
+			}
+
+			/* Modal Styling */
+			.modal-content {
+				background-color: var(--bg-card) !important;
+				border: 1px solid var(--border-color) !important;
+				border-radius: 1rem !important;
+			}
+
+			.modal-header {
+				border-bottom: 1px solid var(--border-color) !important;
+				background-color: var(--bg-secondary) !important;
+				border-radius: 1rem 1rem 0 0 !important;
+			}
+
+			.modal-footer {
+				border-top: 1px solid var(--border-color) !important;
+				background-color: var(--bg-secondary) !important;
+				border-radius: 0 0 1rem 1rem !important;
+			}
+
+			/* Typography */
+			h1, h2, h3, h4, h5, h6 {
+				color: var(--text-primary);
+				font-weight: 600;
+			}
+
+			.text-muted {
+				color: var(--text-muted) !important;
+			}
+
+			/* Layout */
+			.main-panel {
+				padding: 2rem 1rem;
+			}
+
+			.custom-form {
+				display: flex;
+				flex-direction: column;
+				gap: 2rem;
+				padding: 1rem;
+			}
+
+			/* Link Styling */
+			.link-dark {
+				color: var(--text-primary) !important;
+				text-decoration: none;
+			}
+
+			.link-dark:hover {
+				color: var(--accent-gold) !important;
+				text-decoration: none;
+			}
+
+			/* Responsive adjustments */
+			@media (max-width: 768px) {
+				.main-panel {
+					padding: 1rem 0.5rem;
+				}
+				
+				.card {
+					margin-bottom: 1rem;
+				}
+			}
 		</style>
 		{ children... }
 	</head>
@@ -107,7 +505,7 @@ templ Base(page string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@Head()
-		<body class="min-vh-100" style="background-color: #67806f">
+		<body class="min-vh-100">
 			@Navbar(page)
 			<div class="container main-panel">
 				{ children... }
