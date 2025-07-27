@@ -2,13 +2,14 @@ package chores
 
 import (
 	"context"
-	"github.com/go-chi/chi/v5"
 	"goDoChores/auth"
 	"goDoChores/models"
 	"goDoChores/routes"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"net/http"
 )
 
 func DetailGet(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +24,7 @@ func DetailGet(w http.ResponseWriter, r *http.Request) {
 	}
 	choreID := chi.URLParam(r, "choreID")
 	var chore models.Chore
-	queryResult := db.Where(models.Chore{UserID: userID}).First(&chore, choreID)
+	queryResult := db.Preload("Reminders").Where(models.Chore{UserID: userID}).First(&chore, choreID)
 	if queryResult.Error != nil {
 		http.Error(w, queryResult.Error.Error(), http.StatusInternalServerError)
 	}
@@ -46,7 +47,7 @@ func DetailPost(w http.ResponseWriter, r *http.Request) {
 	}
 	choreID := chi.URLParam(r, "choreID")
 	var chore models.Chore
-	queryResult := db.Where(models.Chore{UserID: userID}).First(&chore, choreID)
+	queryResult := db.Preload("Reminders").Where(models.Chore{UserID: userID}).First(&chore, choreID)
 	if queryResult.Error != nil {
 		http.Error(w, queryResult.Error.Error(), http.StatusInternalServerError)
 	}

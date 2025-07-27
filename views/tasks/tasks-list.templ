@@ -1,0 +1,56 @@
+package tasks
+
+import "goDoChores/routes"
+import "goDoChores/models"
+import "goDoChores/views/base"
+
+templ tasksList(tasks []models.Task) {
+	@views.Base("tasks") {
+		<div class="row">
+			<div class="col-12">
+				<div class="d-flex justify-content-between align-items-center mb-4">
+					<h1>Tasks</h1>
+					<a href={ templ.URL(routes.URLFor("tasksCreate")) } class="btn btn-dark">Create New Task</a>
+				</div>
+			</div>
+		</div>
+		
+		if len(tasks) == 0 {
+			<div class="row">
+				<div class="col-12">
+					<div class="card">
+						<div class="card-body text-center">
+							<h5 class="card-title">No tasks yet</h5>
+							<p class="card-text">Create your first task to get started!</p>
+							<a href={ templ.URL(routes.URLFor("tasksCreate")) } class="btn btn-dark">Create Task</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		} else {
+			<div class="row">
+				for _, task := range tasks {
+					<div class="col-md-6 col-lg-4 mb-3">
+						<div class="card h-100">
+							<div class="card-body">
+								<h5 class="card-title">{ task.Name }</h5>
+								<p class="card-text">{ task.Description }</p>
+								<p class="card-text">
+									<small class="text-muted">
+										<strong>Date:</strong> { task.Date.Format("Jan 02, 2006") }
+									</small>
+								</p>
+							</div>
+							<div class="card-footer">
+								<div class="d-flex justify-content-between">
+									<a href={ templ.URL(routes.URLFor("tasksDetail", task.ID)) } class="btn btn-sm btn-outline-primary">View</a>
+									<a href={ templ.URL(routes.URLFor("tasksEdit", task.ID)) } class="btn btn-sm btn-outline-secondary">Edit</a>
+								</div>
+							</div>
+						</div>
+					</div>
+				}
+			</div>
+		}
+	}
+} 

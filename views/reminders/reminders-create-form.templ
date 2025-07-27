@@ -6,8 +6,8 @@ import (
     "goDoChores/views/base"
 )
 
-templ remindersCreatePage(chores []models.Chore, intervals map[string]string) {
-	@views.Base("reminders") {
+templ remindersCreatePage(chores []models.Chore, intervals []string) {
+	@views.Base("chores") {
 		<div class="card" data-bs-theme="dark">
 			<h2 class="card-header" style="padding: 1.5rem">
 				Create Chore Reminder
@@ -29,8 +29,8 @@ templ remindersCreatePage(chores []models.Chore, intervals map[string]string) {
 					<div class="form-group">
 						<label for="interval">Interval</label>
 						<select name="interval" id="interval" class="form-control">
-						    for name, value := range intervals {
-						        <option value={value}>{name}</option>
+						    for _, interval := range intervals {
+						        <option value={interval}>{interval}</option>
 						    }
 						</select>
 					</div>

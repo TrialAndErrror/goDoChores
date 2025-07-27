@@ -1,0 +1,41 @@
+package chores
+
+import (
+	"fmt"
+	"goDoChores/models"
+	"goDoChores/routes"
+	"goDoChores/views/base"
+)
+
+templ choresEditForm(chore models.Chore) {
+	@views.Base("chores") {
+		<div class="mb-3">
+			<a href={templ.URL(routes.URLFor("choresDetail", chore.ID))} class="btn btn-outline-secondary">← Back to Chore</a>
+		</div>
+		<div class="card" data-bs-theme="dark">
+			<h2 class="card-header" style="padding: 1.5rem">
+				Edit Chore
+			</h2>
+			<div class="card-body">
+				<form method="post">
+					<div class="mb-3">
+						<label for="name" class="form-label">Name</label>
+						<input type="text" class="form-control" id="name" name="name" value={ chore.Name } required>
+					</div>
+					<div class="mb-3">
+						<label for="description" class="form-label">Description</label>
+						<textarea class="form-control" id="description" name="description" rows="3">{ chore.Description }</textarea>
+					</div>
+					<div class="mb-3">
+						<label for="time" class="form-label">Time (minutes)</label>
+						<input type="number" class="form-control" id="time" name="time" value={ fmt.Sprintf("%d", chore.Time) } min="1" required>
+					</div>
+					<div class="d-flex justify-content-between">
+						<a href={templ.URL(routes.URLFor("choresDetail", chore.ID))} class="btn btn-outline-secondary">Cancel</a>
+						<button type="submit" class="btn btn-primary">Update Chore</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	}
+} 

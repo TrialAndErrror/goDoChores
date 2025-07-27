@@ -8,9 +8,15 @@ var Routes = map[string]string{
 	"choresList":      "/chores/",
 	"choresCreate":    "/chores/new",
 	"choresDetail":    "/chores/%d/",
+	"choresEdit":      "/chores/%d/edit",
 	"remindersList":   "/reminders/",
 	"remindersCreate": "/reminders/new",
 	"remindersDetail": "/reminders/%d/",
+	"remindersEdit":   "/reminders/%d/edit",
+	"tasksList":       "/tasks/",
+	"tasksCreate":     "/tasks/new",
+	"tasksDetail":     "/tasks/%d/",
+	"tasksEdit":       "/tasks/%d/edit",
 	"logout":          "/logout",
 }
 
