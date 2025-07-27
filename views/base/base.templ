@@ -315,6 +315,22 @@ templ Head() {
 				box-shadow: 0 6px 20px rgba(156, 163, 175, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
 			}
 
+			/* Custom button combining outline-primary with dark background */
+			.btn-outline-primary-dark {
+				background-color: var(--bg-secondary) !important;
+				color: var(--text-primary) !important;
+				border-color: var(--primary-green) !important;
+				box-shadow: 0 4px 12px rgba(103, 128, 111, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+			}
+
+			.btn-outline-primary-dark:hover {
+				background-color: var(--primary-green) !important;
+				color: var(--text-primary) !important;
+				border-color: var(--primary-green-light) !important;
+				transform: translateY(-2px);
+				box-shadow: 0 6px 20px rgba(103, 128, 111, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+			}
+
 			.btn-success {
 				background-color: var(--primary-green) !important;
 				border-color: var(--primary-green-light) !important;

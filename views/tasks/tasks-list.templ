@@ -10,7 +10,7 @@ templ tasksList(tasks []models.Task) {
 			<div class="col-12">
 				<div class="d-flex justify-content-between align-items-center mb-4">
 					<h1>Tasks</h1>
-					<a href={ templ.URL(routes.URLFor("tasksCreate")) } class="btn btn-dark">Create New Task</a>
+					<a href={ templ.URL(routes.URLFor("tasksCreate")) } class="btn btn-outline-primary-dark">Create New Task</a>
 				</div>
 			</div>
 		</div>
@@ -22,7 +22,7 @@ templ tasksList(tasks []models.Task) {
 						<div class="card-body text-center">
 							<h5 class="card-title">No tasks yet</h5>
 							<p class="card-text">Create your first task to get started!</p>
-							<a href={ templ.URL(routes.URLFor("tasksCreate")) } class="btn btn-dark">Create Task</a>
+							<a href={ templ.URL(routes.URLFor("tasksCreate")) } class="btn btn-outline-primary-dark">Create Task</a>
 						</div>
 					</div>
 				</div>
