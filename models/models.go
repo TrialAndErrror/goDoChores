@@ -91,13 +91,13 @@ func ChoreReminderFromForm(data url.Values, userID uint) (ChoreReminder, error) 
 func GetNextReminderDate(reminder ChoreReminder) (newDate time.Time, error error) {
 	switch reminder.Interval {
 	case "Daily":
-		return reminder.Date.AddDate(0, 0, 1), nil
+		return time.Now().AddDate(0, 0, 1), nil
 	case "Weekly":
-		return reminder.Date.AddDate(0, 0, 7), nil
+		return time.Now().AddDate(0, 0, 7), nil
 	case "Monthly":
-		return reminder.Date.AddDate(0, 1, 0), nil
+		return time.Now().AddDate(0, 1, 0), nil
 	case "Annual":
-		return reminder.Date.AddDate(1, 0, 0), nil
+		return time.Now().AddDate(1, 0, 0), nil
 	default:
 		return time.Time{}, errors.New("invalid interval")
 	}
