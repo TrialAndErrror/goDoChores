@@ -1,6 +1,7 @@
 package chores
 
 import (
+	"fmt"
 	"goDoChores/models"
 	"goDoChores/routes"
     "goDoChores/views/base"
@@ -8,21 +9,71 @@ import (
 
 templ choresList(chores []models.Chore) {
 	@views.Base("chores") {
-		<div class="card" data-bs-theme="dark">
-			<h2 class="card-header" style="padding: 1.5rem">
-				All Chores
-			</h2>
-			<div class="card-body row">
-				for _, el := range chores {
-					<div class="col-12 col-md-6 col-xl-4 p-2">
-						<a href={ templ.SafeURL(routes.URLFor("choresDetail", el.ID)) } class="link-dark">
-							<div class="chore-card">
-								{ el.Name }
+		<div class="row">
+			<div class="col-12">
+				<div class="d-flex justify-content-between align-items-center mb-4">
+					<h1>Chores</h1>
+					<a href={ templ.URL(routes.URLFor("choresCreate")) } class="btn btn-primary">Create New Chore</a>
+				</div>
+			</div>
+		</div>
+		
+		if len(chores) == 0 {
+			<div class="row">
+				<div class="col-12">
+					<div class="card">
+						<div class="card-body text-center">
+							<h5 class="card-title">No chores yet</h5>
+							<p class="card-text">Create your first chore to get started!</p>
+							<a href={ templ.URL(routes.URLFor("choresCreate")) } class="btn btn-primary">Create Chore</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		} else {
+			<div class="row">
+				for _, chore := range chores {
+					<div class="col-md-6 col-lg-4 mb-3">
+						<div class="card h-100">
+							<div class="card-body">
+								<h5 class="card-title">{ chore.Name }</h5>
+								<p class="card-text">{ chore.Description }</p>
+								<p class="card-text">
+									<small class="text-muted">
+										<strong>Time:</strong> { fmt.Sprintf("%d", chore.Time) } minutes
+									</small>
+								</p>
+								
+								if len(chore.Reminders) > 0 {
+									<div class="reminder-tiles mt-3">
+										<small class="text-muted mb-2 d-block">
+											<strong>Reminders:</strong>
+										</small>
+										<div class="reminder-grid">
+											for _, reminder := range chore.Reminders {
+												<a href={ templ.URL(routes.URLFor("remindersDetail", reminder.ID)) } class="reminder-tile-link">
+													<div class="reminder-tile">
+														<small>
+															<strong>{ models.IntervalNames[reminder.Interval] }</strong><br>
+															{ reminder.Date.Format("Jan 02") }
+														</small>
+													</div>
+												</a>
+											}
+										</div>
+									</div>
+								}
 							</div>
-						</a>
+							<div class="card-footer">
+								<div class="d-flex justify-content-between">
+									<a href={ templ.URL(routes.URLFor("choresDetail", chore.ID)) } class="btn btn-sm btn-outline-primary">View</a>
+									<a href={ templ.URL(routes.URLFor("choresEdit", chore.ID)) } class="btn btn-sm btn-outline-secondary">Edit</a>
+								</div>
+							</div>
+						</div>
 					</div>
 				}
 			</div>
-		</div>
+		}
 	}
 }

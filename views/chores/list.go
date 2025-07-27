@@ -4,9 +4,10 @@ import (
 	"context"
 	"goDoChores/auth"
 	"goDoChores/models"
+	"net/http"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"net/http"
 )
 
 func GetAllChores(userID uint) ([]models.Chore, error) {
@@ -16,7 +17,7 @@ func GetAllChores(userID uint) ([]models.Chore, error) {
 	}
 
 	var chores []models.Chore
-	db.Where(models.Chore{UserID: userID}).Find(&chores)
+	db.Preload("Reminders").Where(models.Chore{UserID: userID}).Find(&chores)
 
 	return chores, nil
 }
