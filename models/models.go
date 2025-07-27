@@ -3,11 +3,12 @@ package models
 import (
 	"errors"
 	"goDoChores/utils"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 	"net/url"
 	"strconv"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type Chore struct {
@@ -109,6 +110,7 @@ type User struct {
 
 	Chores         []Chore
 	ChoreReminders []ChoreReminder
+	Tasks          []Task
 }
 
 func (u *User) SetPassword(password string) error {
@@ -123,4 +125,31 @@ func (u *User) SetPassword(password string) error {
 func (u *User) CheckPassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 	return err == nil
+}
+
+type Task struct {
+	gorm.Model
+	Name        string
+	Description string
+	Date        time.Time
+
+	UserID uint
+	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+}
+
+func TaskFromForm(data url.Values, userID uint) (Task, error) {
+	dateString := data.Get("date")
+	dateFormatString := "2006-01-02"
+	date, dateParseErr := time.Parse(dateFormatString, dateString)
+	if dateParseErr != nil {
+		return Task{}, dateParseErr
+	}
+
+	task := Task{
+		Name:        data.Get("name"),
+		Description: data.Get("description"),
+		Date:        date,
+		UserID:      userID,
+	}
+	return task, nil
 }

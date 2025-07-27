@@ -3,30 +3,47 @@ package home
 import (
 	"fmt"
 	"goDoChores/models"
+	"goDoChores/routes"
 	"goDoChores/views/base"
-	"goDoChores/views/reminders"
 )
 
-templ upcomingChoresWidget(reminders []reminders.ChoreReminderListEntry) {
+templ choresAndTasksWidget(items []CombinedItem) {
 	<div class="card" data-bs-theme="dark">
 		<h2 class="card-header" style="padding: 1.5rem">
-			Upcoming Chores
+			Chores & Tasks
 		</h2>
 		<div class="card-body row">
-			for _, el := range reminders {
-				<div class="col-12 col-md-6 col-xl-4 p-2">
-					<div
-						class="chore-card"
-						data-bs-toggle="modal"
-						data-bs-target="#manageChoreModal"
-						data-name={ el.Name }
-						data-id={ fmt.Sprintf("%d", el.ReminderID) }
-						data-date={ el.Date.Format("Monday January 02, 2006") }
-						data-interval={ models.IntervalNames[el.Interval] }
-					>
-						{ el.Name } ({ el.Date.Format("Monday January 02, 2006") })
-					</div>
+			if len(items) == 0 {
+				<div class="col-12">
+					<p class="text-center">No chores or tasks yet. 
+						<a href={ templ.URL(routes.URLFor("choresCreate")) }>Create your first chore</a> or 
+						<a href={ templ.URL(routes.URLFor("tasksCreate")) }>create your first task</a>!
+					</p>
 				</div>
+			} else {
+				for _, item := range items {
+					<div class="col-12 col-md-6 col-xl-4 p-2">
+						if item.Type == "chore" {
+							<div
+								class="chore-card"
+								data-bs-toggle="modal"
+								data-bs-target="#manageChoreModal"
+								data-name={ item.Name }
+								data-id={ fmt.Sprintf("%d", item.ID) }
+								data-date={ item.Date.Format("Monday January 02, 2006") }
+								data-interval={ models.IntervalNames[item.Interval] }
+							>
+								{ item.Name } ({ item.Date.Format("Jan 02, 2006") })
+							</div>
+						} else {
+							<a href={ templ.URL(routes.URLFor("tasksDetail", item.ID)) } class="link-dark">
+								<div class="chore-card">
+									{ item.Name } ({ item.Date.Format("Jan 02, 2006") })
+								</div>
+							</a>
+						}
+					</div>
+				}
 			}
 		</div>
 	</div>
@@ -60,14 +77,14 @@ templ upcomingChoresWidget(reminders []reminders.ChoreReminderListEntry) {
 	</div>
 }
 
-templ home(reminders []reminders.ChoreReminderListEntry) {
+templ home(items []CombinedItem) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@views.Head()
 		<body class="min-vh-100" style="background-color: #67806f">
 			@views.Navbar("home")
 			<div class="container main-panel">
-				@upcomingChoresWidget(reminders)
+				@choresAndTasksWidget(items)
 			</div>
 			@views.Footer() {
 				<script>

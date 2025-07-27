@@ -32,6 +32,15 @@ templ Navbar(page string) {
 							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("remindersCreate")) }>Create New</a></li>
 						</ul>
 					</li>
+					<li class="nav-item dropdown">
+						<a class={ "nav-link dropdown-toggle", templ.KV("active", page == "tasks") } href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+							Tasks
+						</a>
+						<ul class="dropdown-menu">
+							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("tasksList")) }>View All</a></li>
+							<li><a class="dropdown-item" href={ templ.URL(routes.URLFor("tasksCreate")) }>Create New</a></li>
+						</ul>
+					</li>
 				</ul>
 
 				<ul class="navbar-nav mb-2 mb-lg-0">

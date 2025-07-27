@@ -11,6 +11,10 @@ var Routes = map[string]string{
 	"remindersList":   "/reminders/",
 	"remindersCreate": "/reminders/new",
 	"remindersDetail": "/reminders/%d/",
+	"tasksList":       "/tasks/",
+	"tasksCreate":     "/tasks/new",
+	"tasksDetail":     "/tasks/%d/",
+	"tasksEdit":       "/tasks/%d/edit",
 	"logout":          "/logout",
 }
 

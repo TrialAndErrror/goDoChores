@@ -2,18 +2,20 @@ package main
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
-	"github.com/spf13/cobra"
 	"goDoChores/auth"
 	"goDoChores/models"
 	"goDoChores/views/chores"
 	"goDoChores/views/home"
 	"goDoChores/views/reminders"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+	"goDoChores/views/tasks"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/joho/godotenv"
+	"github.com/spf13/cobra"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -34,7 +36,7 @@ func runServer() {
 	}
 
 	// Migrate the schema
-	migrateErr := db.AutoMigrate(&models.Chore{}, &models.ChoreReminder{}, &models.User{})
+	migrateErr := db.AutoMigrate(&models.Chore{}, &models.ChoreReminder{}, &models.Task{}, &models.User{})
 	if migrateErr != nil {
 		panic("failed to migrate database")
 	}
@@ -56,6 +58,7 @@ func runServer() {
 		r.Mount("/", home.HomeRouter())
 		r.Mount("/chores", chores.ChoresRouter())
 		r.Mount("/reminders", reminders.RemindersRouter())
+		r.Mount("/tasks", tasks.TasksRouter())
 
 		r.Post("/logout", auth.LogoutPost)
 	})
