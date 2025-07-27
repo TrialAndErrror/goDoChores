@@ -2,7 +2,6 @@ package home
 
 import (
 	"fmt"
-	"goDoChores/models"
 	"goDoChores/routes"
 	"goDoChores/views/base"
 )
@@ -31,13 +30,13 @@ templ choresAndTasksWidget(items []CombinedItem) {
 								data-name={ item.Name }
 								data-id={ fmt.Sprintf("%d", item.ID) }
 								data-date={ item.Date.Format("Monday January 02, 2006") }
-								data-interval={ models.IntervalNames[item.Interval] }
+								data-interval={ item.Interval }
 							>
 								{ item.Name } ({ item.Date.Format("Jan 02, 2006") })
 							</div>
 						} else {
 							<a href={ templ.URL(routes.URLFor("tasksDetail", item.ID)) } class="link-dark">
-								<div class="chore-card">
+								<div class="task-card">
 									{ item.Name } ({ item.Date.Format("Jan 02, 2006") })
 								</div>
 							</a>

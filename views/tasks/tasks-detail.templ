@@ -23,14 +23,6 @@ templ tasksDetail(task models.Task) {
 								
 								<h5>Date</h5>
 								<p class="mb-4">{ task.Date.Format("Monday, January 2, 2006") }</p>
-								
-								<h5>Created</h5>
-								<p class="mb-4">{ task.CreatedAt.Format("Monday, January 2, 2006 at 3:04 PM") }</p>
-								
-								if !task.UpdatedAt.Equal(task.CreatedAt) {
-									<h5>Last Updated</h5>
-									<p class="mb-4">{ task.UpdatedAt.Format("Monday, January 2, 2006 at 3:04 PM") }</p>
-								}
 							</div>
 						</div>
 						

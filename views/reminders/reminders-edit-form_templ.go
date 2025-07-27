@@ -11,10 +11,11 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 	"goDoChores/models"
+	"goDoChores/routes"
 	"goDoChores/views/base"
 )
 
-func remindersEditPage(reminder models.ChoreReminder, chores []models.Chore, intervals map[string]string) templ.Component {
+func remindersEditPage(reminder models.ChoreReminder, chores []models.Chore, intervals []string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -59,7 +60,7 @@ func remindersEditPage(reminder models.ChoreReminder, chores []models.Chore, int
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", el.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-edit-form.templ`, Line: 21, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-edit-form.templ`, Line: 22, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -82,7 +83,7 @@ func remindersEditPage(reminder models.ChoreReminder, chores []models.Chore, int
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(el.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-edit-form.templ`, Line: 21, Col: 120}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-edit-form.templ`, Line: 22, Col: 120}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -98,9 +99,9 @@ func remindersEditPage(reminder models.ChoreReminder, chores []models.Chore, int
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(reminder.Date.Format("2006/01/02"))
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(reminder.Date.Format("2006-01-02"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-edit-form.templ`, Line: 27, Col: 110}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-edit-form.templ`, Line: 28, Col: 110}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -110,15 +111,15 @@ func remindersEditPage(reminder models.ChoreReminder, chores []models.Chore, int
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			for name, value := range intervals {
+			for _, interval := range intervals {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<option value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(interval)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-edit-form.templ`, Line: 33, Col: 34}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-edit-form.templ`, Line: 34, Col: 37}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -128,7 +129,7 @@ func remindersEditPage(reminder models.ChoreReminder, chores []models.Chore, int
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if reminder.Interval == value {
+				if reminder.Interval == interval {
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " selected")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -139,9 +140,9 @@ func remindersEditPage(reminder models.ChoreReminder, chores []models.Chore, int
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
-				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(name)
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(interval)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-edit-form.templ`, Line: 33, Col: 82}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-edit-form.templ`, Line: 34, Col: 92}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -152,13 +153,22 @@ func remindersEditPage(reminder models.ChoreReminder, chores []models.Chore, int
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</select></div><button type=\"submit\" class=\"btn btn-success btn-lg\">Save Chore Reminder</button></form></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</select></div><div class=\"d-flex justify-content-between mt-4\"><a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var8 templ.SafeURL = templ.URL(routes.URLFor("remindersDetail", reminder.ID))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var8)))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" class=\"btn btn-lg btn-outline-secondary\">Cancel</a> <button type=\"submit\" class=\"btn btn-success btn-lg\">Save Chore Reminder</button></div></form></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = views.Base("reminders").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = views.Base("chores").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

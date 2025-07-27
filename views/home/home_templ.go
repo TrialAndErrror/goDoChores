@@ -10,7 +10,6 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"goDoChores/models"
 	"goDoChores/routes"
 	"goDoChores/views/base"
 )
@@ -77,7 +76,7 @@ func choresAndTasksWidget(items []CombinedItem) templ.Component {
 					var templ_7745c5c3_Var4 string
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(item.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 31, Col: 29}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 30, Col: 29}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
@@ -90,7 +89,7 @@ func choresAndTasksWidget(items []CombinedItem) templ.Component {
 					var templ_7745c5c3_Var5 string
 					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", item.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 32, Col: 44}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 31, Col: 44}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
@@ -103,7 +102,7 @@ func choresAndTasksWidget(items []CombinedItem) templ.Component {
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(item.Date.Format("Monday January 02, 2006"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 33, Col: 63}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 32, Col: 63}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -114,9 +113,9 @@ func choresAndTasksWidget(items []CombinedItem) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var7 string
-					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(models.IntervalNames[item.Interval])
+					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(item.Interval)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 34, Col: 59}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 33, Col: 37}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -129,7 +128,7 @@ func choresAndTasksWidget(items []CombinedItem) templ.Component {
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(item.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 36, Col: 19}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 35, Col: 19}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -142,7 +141,7 @@ func choresAndTasksWidget(items []CombinedItem) templ.Component {
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(item.Date.Format("Jan 02, 2006"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 36, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 35, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -162,14 +161,14 @@ func choresAndTasksWidget(items []CombinedItem) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"link-dark\"><div class=\"chore-card\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"link-dark\"><div class=\"task-card\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(item.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 41, Col: 20}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 40, Col: 20}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -182,7 +181,7 @@ func choresAndTasksWidget(items []CombinedItem) templ.Component {
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(item.Date.Format("Jan 02, 2006"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 41, Col: 58}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/home/home.templ`, Line: 40, Col: 58}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {

@@ -10,6 +10,9 @@ import (
 
 templ choresDetailPage(chore models.Chore) {
 	@views.Base("chores") {
+		<div class="mb-3">
+			<a href={templ.URL(routes.URLFor("choresList"))} class="btn btn-outline-secondary">← Back to Chores</a>
+		</div>
 		<div class="card" data-bs-theme="dark">
 			<h2 class="card-header" style="padding: 1.5rem">
 				View Chore
@@ -21,10 +24,56 @@ templ choresDetailPage(chore models.Chore) {
 			</div>
 			<div class="card-footer mt-3">
 				<div class="d-flex justify-content-between">
-					<a href={templ.URL(routes.URLFor("choresList"))} class="btn btn-lg btn-outline-secondary">Back</a>
+					<a href={templ.URL(routes.URLFor("choresEdit", chore.ID))} class="btn btn-lg btn-primary me-2">Edit</a>
 					<button class="btn btn-lg btn-danger" data-bs-toggle="modal" data-bs-target="#deleteChoreModal">Delete</button>
 				</div>
 			</div>
+		</div>
+		
+		<div class="mt-4">
+			<div class="d-flex justify-content-between align-items-center mb-3">
+				<h3>Reminders</h3>
+				<a href={templ.URL(routes.URLFor("remindersCreate") + "?choreID=" + fmt.Sprintf("%d", chore.ID))} class="btn btn-success">Create Reminder</a>
+			</div>
+			if len(chore.Reminders) > 0 {
+				<div class="row">
+					for _, reminder := range chore.Reminders {
+						<div class="col-md-6 col-lg-4 mb-3">
+							<div class="card h-100">
+								<div class="card-body">
+									<h6 class="card-title">{ reminder.Interval }</h6>
+									<p class="card-text">
+										<small class="text-muted">
+											<strong>Next:</strong> { reminder.Date.Format("Jan 02, 2006") }
+										</small>
+									</p>
+									<p class="card-text">
+										<small class="text-muted">
+											<strong>Time:</strong> { reminder.Date.Format("3:04 PM") }
+										</small>
+									</p>
+								</div>
+								<div class="card-footer">
+									<div class="d-flex justify-content-between">
+										<a href={templ.URL(routes.URLFor("remindersDetail", reminder.ID))} class="btn btn-sm btn-outline-primary">View</a>
+										<div>
+											<a href={templ.URL(routes.URLFor("remindersEdit", reminder.ID))} class="btn btn-sm btn-outline-secondary me-1">Edit</a>
+											<button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target={ "#deleteReminderModal" + fmt.Sprintf("%d", reminder.ID) }>Delete</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					}
+				</div>
+			} else {
+				<div class="card">
+					<div class="card-body text-center">
+						<h5 class="card-title">No reminders yet</h5>
+						<p class="card-text">Create your first reminder for this chore!</p>
+					</div>
+				</div>
+			}
 		</div>
 		<div class="modal" tabindex="-1" id="deleteChoreModal" data-bs-theme="dark" style="color: white;">
 			<div class="modal-dialog">
@@ -46,5 +95,30 @@ templ choresDetailPage(chore models.Chore) {
 				</div>
 			</div>
 		</div>
+		
+		if len(chore.Reminders) > 0 {
+			for _, reminder := range chore.Reminders {
+				<div class="modal" tabindex="-1" id={ "deleteReminderModal" + fmt.Sprintf("%d", reminder.ID) } data-bs-theme="dark" style="color: white;">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title">Delete Reminder</h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							</div>
+							<div class="modal-body">
+								<p>Are you sure you'd like to delete this reminder?</p>
+								<p><strong>{ reminder.Interval }</strong> - { reminder.Date.Format("Jan 02, 2006 at 3:04 PM") }</p>
+							</div>
+							<div class="modal-footer">
+								<form method="post" action={templ.URL(routes.URLFor("remindersDetail", reminder.ID))} class="w-100 d-flex justify-content-between">
+									<button type="button" data-bs-dismiss="modal" class="btn btn-outline-secondary">Cancel</button>
+									<button type="submit" name="action" value="delete" class="btn btn-danger">Delete</button>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+		}
 	}
 }

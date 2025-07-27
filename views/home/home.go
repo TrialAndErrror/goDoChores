@@ -138,7 +138,7 @@ func HomePost(w http.ResponseWriter, r *http.Request) {
 		db.Delete(&reminder, reminderID)
 		break
 	case "done":
-		if reminder.Interval == "once" {
+		if reminder.Interval == "Once" {
 			db.Delete(&reminder, reminderID)
 		} else {
 			newDate, err := models.GetNextReminderDate(reminder)

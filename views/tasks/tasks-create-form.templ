@@ -15,17 +15,17 @@ templ tasksCreateForm() {
 						<form method="post" action={ templ.URL(routes.URLFor("tasksCreate")) } class="custom-form">
 							<div class="mb-3">
 								<label for="name" class="form-label">Task Name</label>
-								<input type="text" class="form-control" id="name" name="name" required>
+								<input type="text" class="form-control" id="name" name="name" placeholder="Enter name of task to be completed" required>
 							</div>
 							
 							<div class="mb-3">
 								<label for="description" class="form-label">Description</label>
-								<textarea class="form-control" id="description" name="description" rows="3"></textarea>
+								<textarea class="form-control" id="description" name="description" placeholder="Describe the task to be completed" rows="3"></textarea>
 							</div>
 							
 							<div class="mb-3">
 								<label for="date" class="form-label">Date</label>
-								<input type="date" class="form-control" id="date" name="date" required>
+								<input type="date" class="form-control" id="date" name="date" placeholder="Select the due date for this task" required>
 							</div>
 							
 							<div class="d-flex justify-content-between">

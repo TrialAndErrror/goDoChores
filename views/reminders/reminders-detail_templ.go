@@ -78,9 +78,9 @@ func remindersDetailPage(chore models.Chore, reminder models.ChoreReminder) temp
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(models.IntervalNames[reminder.Interval])
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(reminder.Interval)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-detail.templ`, Line: 17, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-detail.templ`, Line: 17, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -95,39 +95,48 @@ func remindersDetailPage(chore models.Chore, reminder models.ChoreReminder) temp
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" class=\"btn btn-lg btn-outline-secondary\">Back</a> <button class=\"btn btn-lg btn-danger\" data-bs-toggle=\"modal\" data-bs-target=\"#deleteChoreModal\">Delete</button></div></div></div><div class=\"modal\" tabindex=\"-1\" id=\"deleteChoreModal\" data-bs-theme=\"dark\" style=\"color: white;\"><div class=\"modal-dialog\"><div class=\"modal-content\"><div class=\"modal-header\"><h5 class=\"modal-title\">Delete Chore Reminder</h5><button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"modal\" aria-label=\"Close\"></button></div><div class=\"modal-body\"><p>Are you sure you're like to delete this reminder: </p><p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" class=\"btn btn-lg btn-outline-secondary\">Back</a><div><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(chore.Name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-detail.templ`, Line: 35, Col: 21}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			var templ_7745c5c3_Var7 templ.SafeURL = templ.URL(routes.URLFor("remindersEdit", reminder.ID))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var7)))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p><p>Interval: ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" class=\"btn btn-lg btn-primary me-2\">Edit</a> <button class=\"btn btn-lg btn-danger\" data-bs-toggle=\"modal\" data-bs-target=\"#deleteChoreModal\">Delete</button></div></div></div></div><div class=\"modal\" tabindex=\"-1\" id=\"deleteChoreModal\" data-bs-theme=\"dark\" style=\"color: white;\"><div class=\"modal-dialog\"><div class=\"modal-content\"><div class=\"modal-header\"><h5 class=\"modal-title\">Delete Chore Reminder</h5><button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"modal\" aria-label=\"Close\"></button></div><div class=\"modal-body\"><p>Are you sure you're like to delete this reminder: </p><p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(models.IntervalNames[reminder.Interval])
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(chore.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-detail.templ`, Line: 36, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-detail.templ`, Line: 38, Col: 21}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</p></div><div class=\"modal-footer\"><form method=\"post\" class=\"w-100 d-flex justify-content-between\"><button type=\"button\" data-bs-dismiss=\"modal\" class=\"btn btn-outline-secondary\">Cancel</button> <button type=\"submit\" name=\"action\" value=\"delete\" class=\"btn btn-danger\">Delete</button></form></div></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</p><p>Interval: ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(reminder.Interval)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/reminders/reminders-detail.templ`, Line: 39, Col: 44}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</p></div><div class=\"modal-footer\"><form method=\"post\" class=\"w-100 d-flex justify-content-between\"><button type=\"button\" data-bs-dismiss=\"modal\" class=\"btn btn-lg btn-outline-secondary\">Cancel</button> <button type=\"submit\" name=\"action\" value=\"delete\" class=\"btn btn-danger\">Delete</button></form></div></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = views.Base("reminders").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = views.Base("chores").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

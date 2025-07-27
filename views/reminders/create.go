@@ -6,9 +6,10 @@ import (
 	"goDoChores/models"
 	"goDoChores/routes"
 	"goDoChores/views/chores"
+	"net/http"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"net/http"
 )
 
 func CreateGet(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +22,7 @@ func CreateGet(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	component := remindersCreatePage(chores, models.ValidIntervals)
+	component := remindersCreatePage(chores, models.GetIntervalNames())
 	renderErr := component.Render(context.Background(), w)
 	if renderErr != nil {
 		http.Error(w, renderErr.Error(), http.StatusInternalServerError)

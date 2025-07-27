@@ -13,7 +13,7 @@ templ choresList(chores []models.Chore) {
 			<div class="col-12">
 				<div class="d-flex justify-content-between align-items-center mb-4">
 					<h1>Chores</h1>
-					<a href={ templ.URL(routes.URLFor("choresCreate")) } class="btn btn-primary">Create New Chore</a>
+					<a href={ templ.URL(routes.URLFor("choresCreate")) } class="btn btn-dark">Create New Chore</a>
 				</div>
 			</div>
 		</div>
@@ -25,7 +25,7 @@ templ choresList(chores []models.Chore) {
 						<div class="card-body text-center">
 							<h5 class="card-title">No chores yet</h5>
 							<p class="card-text">Create your first chore to get started!</p>
-							<a href={ templ.URL(routes.URLFor("choresCreate")) } class="btn btn-primary">Create Chore</a>
+							<a href={ templ.URL(routes.URLFor("choresCreate")) } class="btn btn-outline-primary bg-dark">Create Chore</a>
 						</div>
 					</div>
 				</div>
@@ -54,7 +54,7 @@ templ choresList(chores []models.Chore) {
 												<a href={ templ.URL(routes.URLFor("remindersDetail", reminder.ID)) } class="reminder-tile-link">
 													<div class="reminder-tile">
 														<small>
-															<strong>{ models.IntervalNames[reminder.Interval] }</strong><br>
+															<strong>{ reminder.Interval }</strong><br>
 															{ reminder.Date.Format("Jan 02") }
 														</small>
 													</div>

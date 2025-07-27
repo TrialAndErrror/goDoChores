@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"goDoChores/utils"
 	"net/url"
 	"strconv"
 	"time"
@@ -47,15 +46,18 @@ type ChoreReminder struct {
 	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
-var ValidIntervals = map[string]string{
-	"Daily":   "day",
-	"Weekly":  "week",
-	"Monthly": "month",
-	"Annual":  "year",
-	"Once":    "once",
+var ValidIntervals = map[string]bool{
+	"Daily":   true,
+	"Weekly":  true,
+	"Monthly": true,
+	"Annual":  true,
+	"Once":    true,
 }
 
-var IntervalNames = utils.ReverseMap(ValidIntervals)
+// GetIntervalNames returns a slice of valid interval names
+func GetIntervalNames() []string {
+	return []string{"Daily", "Weekly", "Monthly", "Annual", "Once"}
+}
 
 func ChoreReminderFromForm(data url.Values, userID uint) (ChoreReminder, error) {
 	dateString := data.Get("date")
@@ -72,8 +74,7 @@ func ChoreReminderFromForm(data url.Values, userID uint) (ChoreReminder, error) 
 	}
 
 	interval := data.Get("interval")
-	_, intervalOk := IntervalNames[interval]
-	if !intervalOk {
+	if !ValidIntervals[interval] {
 		return ChoreReminder{}, errors.New("invalid interval")
 	}
 
@@ -89,13 +90,13 @@ func ChoreReminderFromForm(data url.Values, userID uint) (ChoreReminder, error) 
 
 func GetNextReminderDate(reminder ChoreReminder) (newDate time.Time, error error) {
 	switch reminder.Interval {
-	case "day":
+	case "Daily":
 		return reminder.Date.AddDate(0, 0, 1), nil
-	case "week":
+	case "Weekly":
 		return reminder.Date.AddDate(0, 0, 7), nil
-	case "month":
+	case "Monthly":
 		return reminder.Date.AddDate(0, 1, 0), nil
-	case "year":
+	case "Annual":
 		return reminder.Date.AddDate(1, 0, 0), nil
 	default:
 		return time.Time{}, errors.New("invalid interval")

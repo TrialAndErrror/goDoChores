@@ -2,12 +2,13 @@ package reminders
 
 import (
     "goDoChores/models"
+    "goDoChores/routes"
     "goDoChores/views/base"
     "fmt"
 )
 
-templ remindersEditPage(reminder models.ChoreReminder, chores []models.Chore, intervals map[string]string) {
-	@views.Base("reminders") {
+templ remindersEditPage(reminder models.ChoreReminder, chores []models.Chore, intervals []string) {
+	@views.Base("chores") {
 		<div class="card" data-bs-theme="dark">
 			<h2 class="card-header" style="padding: 1.5rem">
 				Edit Chore Reminder
@@ -24,17 +25,20 @@ templ remindersEditPage(reminder models.ChoreReminder, chores []models.Chore, in
 					</div>
 					<div class="form-group">
 						<label for="date">Date</label>
-						<input type="date" class="form-control" id="date" name="date" value={ reminder.Date.Format("2006/01/02") } />
+						<input type="date" class="form-control" id="date" name="date" value={ reminder.Date.Format("2006-01-02") } />
 					</div>
 					<div class="form-group">
 						<label for="interval">Interval</label>
 						<select name="interval" id="interval" class="form-control">
-						    for name, value := range intervals {
-						        <option value={value} selected?={ reminder.Interval == value }>{name}</option>
+						    for _, interval := range intervals {
+						        <option value={interval} selected?={ reminder.Interval == interval }>{interval}</option>
 						    }
 						</select>
 					</div>
-					<button type="submit" class="btn btn-success btn-lg">Save Chore Reminder</button>
+					<div class="d-flex justify-content-between mt-4">
+						<a href={templ.URL(routes.URLFor("remindersDetail", reminder.ID))} class="btn btn-lg btn-outline-secondary">Cancel</a>
+						<button type="submit" class="btn btn-success btn-lg">Save Chore Reminder</button>
+					</div>
 				</form>
 			</div>
 		</div>

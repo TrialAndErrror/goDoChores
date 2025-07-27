@@ -53,7 +53,7 @@ func tasksCreateForm() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" class=\"custom-form\"><div class=\"mb-3\"><label for=\"name\" class=\"form-label\">Task Name</label> <input type=\"text\" class=\"form-control\" id=\"name\" name=\"name\" required></div><div class=\"mb-3\"><label for=\"description\" class=\"form-label\">Description</label> <textarea class=\"form-control\" id=\"description\" name=\"description\" rows=\"3\"></textarea></div><div class=\"mb-3\"><label for=\"date\" class=\"form-label\">Date</label> <input type=\"date\" class=\"form-control\" id=\"date\" name=\"date\" required></div><div class=\"d-flex justify-content-between\"><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" class=\"custom-form\"><div class=\"mb-3\"><label for=\"name\" class=\"form-label\">Task Name</label> <input type=\"text\" class=\"form-control\" id=\"name\" name=\"name\" placeholder=\"Enter name of task to be completed\" required></div><div class=\"mb-3\"><label for=\"description\" class=\"form-label\">Description</label> <textarea class=\"form-control\" id=\"description\" name=\"description\" placeholder=\"Describe the task to be completed\" rows=\"3\"></textarea></div><div class=\"mb-3\"><label for=\"date\" class=\"form-label\">Date</label> <input type=\"date\" class=\"form-control\" id=\"date\" name=\"date\" placeholder=\"Select the due date for this task\" required></div><div class=\"d-flex justify-content-between\"><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
