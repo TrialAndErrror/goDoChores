@@ -59,3 +59,56 @@ func DetailGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, renderErr.Error(), http.StatusInternalServerError)
 	}
 }
+
+func DetailPost(w http.ResponseWriter, r *http.Request) {
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Parse form data
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	taskIDStr := chi.URLParam(r, "taskID")
+	if taskIDStr == "" {
+		http.Error(w, "Task ID is required", http.StatusBadRequest)
+		return
+	}
+
+	taskID, err := strconv.ParseUint(taskIDStr, 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid task ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get the task
+	task, err := GetTaskByID(uint(taskID), userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	// Handle different actions
+	action := r.PostForm.Get("action")
+	switch action {
+	case "delete":
+		// Delete the task
+		db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if err := db.Delete(task).Error; err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Redirect to tasks list after deletion
+	http.Redirect(w, r, "/tasks/", http.StatusFound)
+}

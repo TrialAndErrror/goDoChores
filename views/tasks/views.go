@@ -9,6 +9,7 @@ func TasksRouter() chi.Router {
 	r.Get("/new", CreateGet)
 	r.Post("/new", CreatePost)
 	r.Get("/{taskID}/", DetailGet)
+	r.Post("/{taskID}/", DetailPost)
 	r.Get("/{taskID}/edit", EditGet)
 	r.Post("/{taskID}/edit", EditPost)
 

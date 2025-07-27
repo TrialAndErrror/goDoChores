@@ -28,8 +28,33 @@ templ tasksDetail(task models.Task) {
 						
 						<div class="d-flex justify-content-between">
 							<a href={ templ.URL(routes.URLFor("tasksList")) } class="btn btn-secondary">Back to Tasks</a>
-							<a href={ templ.URL(routes.URLFor("tasksEdit", task.ID)) } class="btn btn-primary">Edit Task</a>
+							<div>
+								<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#deleteTaskModal">Task Completed</button>
+							</div>
 						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Delete Task Modal -->
+		<div class="modal" tabindex="-1" id="deleteTaskModal" data-bs-theme="dark" style="color: white;">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Delete Task</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<p>Are you sure you want to mark this task as completed? The task will be deleted.</p>
+						<p><strong>{ task.Name }</strong></p>
+						<p class="text-muted">This action cannot be undone.</p>
+					</div>
+					<div class="modal-footer">
+						<form method="post" class="w-100 d-flex justify-content-between">
+							<button type="button" data-bs-dismiss="modal" class="btn btn-outline-secondary">Cancel</button>
+							<button type="submit" name="action" value="delete" class="btn btn-primary">Delete Task</button>
+						</form>
 					</div>
 				</div>
 			</div>

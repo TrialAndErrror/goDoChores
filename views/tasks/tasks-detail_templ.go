@@ -102,16 +102,20 @@ func tasksDetail(task models.Task) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" class=\"btn btn-secondary\">Back to Tasks</a> <a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" class=\"btn btn-secondary\">Back to Tasks</a><div><button class=\"btn btn-primary\" data-bs-toggle=\"modal\" data-bs-target=\"#deleteTaskModal\">Task Completed</button></div></div></div></div></div></div><!-- Delete Task Modal --> <div class=\"modal\" tabindex=\"-1\" id=\"deleteTaskModal\" data-bs-theme=\"dark\" style=\"color: white;\"><div class=\"modal-dialog\"><div class=\"modal-content\"><div class=\"modal-header\"><h5 class=\"modal-title\">Delete Task</h5><button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"modal\" aria-label=\"Close\"></button></div><div class=\"modal-body\"><p>Are you sure you want to mark this task as completed? The task will be deleted.</p><p><strong>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var8 templ.SafeURL = templ.URL(routes.URLFor("tasksEdit", task.ID))
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var8)))
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(task.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/tasks/tasks-detail.templ`, Line: 50, Col: 28}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" class=\"btn btn-primary\">Edit Task</a></div></div></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</strong></p><p class=\"text-muted\">This action cannot be undone.</p></div><div class=\"modal-footer\"><form method=\"post\" class=\"w-100 d-flex justify-content-between\"><button type=\"button\" data-bs-dismiss=\"modal\" class=\"btn btn-outline-secondary\">Cancel</button> <button type=\"submit\" name=\"action\" value=\"delete\" class=\"btn btn-primary\">Delete Task</button></form></div></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
