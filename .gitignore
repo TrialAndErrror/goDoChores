@@ -9,8 +9,8 @@
 .idea/
 *.db
 
-/views/*_templ.txt
-/views/*_templ.go
+*_templ.txt
+*_templ.go
 
 
 .env

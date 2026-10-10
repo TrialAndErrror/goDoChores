@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
+	"goDoChores/routes"
 
 	"github.com/go-chi/chi/v5"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func EditGet(w http.ResponseWriter, r *http.Request) {
@@ -20,20 +21,24 @@ func EditGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	db := database.DB
+
+	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
 	var chore models.Chore
-	result := db.First(&chore, id)
+	result := db.Where("user_id = ?", userID).First(&chore, id)
 	if result.Error != nil {
 		http.Error(w, "Chore not found", http.StatusNotFound)
 		return
 	}
 
-	choresEditForm(chore).Render(context.Background(), w)
+	if renderErr := choresEditForm(chore).Render(context.Background(), w); renderErr != nil {
+		http.Error(w, renderErr.Error(), http.StatusInternalServerError)
+	}
 }
 
 func EditPost(w http.ResponseWriter, r *http.Request) {
@@ -44,14 +49,16 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	db := database.DB
+
+	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
 	var chore models.Chore
-	result := db.First(&chore, id)
+	result := db.Where("user_id = ?", userID).First(&chore, id)
 	if result.Error != nil {
 		http.Error(w, "Chore not found", http.StatusNotFound)
 		return
@@ -62,14 +69,15 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update chore fields
-	chore.Name = r.FormValue("name")
-	chore.Description = r.FormValue("description")
-
-	timeStr := r.FormValue("time")
-	if timeInt, err := strconv.Atoi(timeStr); err == nil {
-		chore.Time = timeInt
+	// Validate the submitted fields the same way create does.
+	updated, err := models.ChoreFromForm(r.PostForm, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
+	chore.Name = updated.Name
+	chore.Description = updated.Description
+	chore.Time = updated.Time
 
 	// Save the updated chore
 	if err := db.Save(&chore).Error; err != nil {
@@ -78,5 +86,5 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Redirect to the chore detail page
-	http.Redirect(w, r, "/chores/"+choreID+"/", http.StatusSeeOther)
+	http.Redirect(w, r, routes.URLFor("choresDetail", chore.ID), http.StatusSeeOther)
 }

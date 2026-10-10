@@ -3,21 +3,16 @@ package tasks
 import (
 	"context"
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func GetTaskByID(taskID uint, userID uint) (*models.Task, error) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		return nil, err
-	}
+	db := database.DB
 
 	var task models.Task
 	result := db.Where("id = ? AND user_id = ?", taskID, userID).First(&task)
@@ -97,11 +92,7 @@ func DetailPost(w http.ResponseWriter, r *http.Request) {
 	switch action {
 	case "delete":
 		// Delete the task
-		db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		db := database.DB
 
 		if err := db.Delete(task).Error; err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -4,45 +4,63 @@ import (
 	"fmt"
 	"goDoChores/routes"
 	"goDoChores/views/base"
+	"strconv"
 )
 
-templ choresAndTasksWidget(items []CombinedItem) {
+// itemCard renders one chore reminder or task as a grid cell.
+templ itemCard(item CombinedItem) {
+	<div class="col-12 col-md-6 col-xl-4 p-2">
+		if item.Type == "chore" {
+			<div
+				class="chore-card"
+				data-bs-toggle="modal"
+				data-bs-target="#manageChoreModal"
+				data-name={ item.Name }
+				data-id={ fmt.Sprintf("%d", item.ID) }
+				data-date={ item.Date.Format("Monday January 02, 2006") }
+				data-interval={ item.Interval }
+			>
+				{ item.Name } ({ item.Date.Format("Jan 02, 2006") })
+			</div>
+		} else {
+			<a href={ templ.URL(routes.URLFor("tasksDetail", item.ID)) } class="link-dark">
+				<div class="task-card">
+					{ item.Name } ({ item.Date.Format("Jan 02, 2006") })
+				</div>
+			</a>
+		}
+	</div>
+}
+
+// itemsBatch renders a run of cards plus, when more remain, a sentinel that
+// the page's script watches to fetch the next batch.
+templ itemsBatch(items []CombinedItem, nextOffset int, hasMore bool) {
+	for _, item := range items {
+		@itemCard(item)
+	}
+	if hasMore {
+		<div class="col-12 text-center py-3" id="loadMoreSentinel" data-next-offset={ strconv.Itoa(nextOffset) }>
+			Loading more…
+		</div>
+	}
+}
+
+templ choresAndTasksWidget(items []CombinedItem, nextOffset int, hasMore bool) {
 	<div class="card" data-bs-theme="dark">
 		<h2 class="card-header" style="padding: 1.5rem">
 			Chores & Tasks
 		</h2>
-		<div class="card-body row">
+		<div class="card-body row" id="itemsRow">
 			if len(items) == 0 {
 				<div class="col-12">
-					<p class="text-center">No chores or tasks yet. 
+					<p class="text-center">
+						No chores or tasks yet. 
 						<a href={ templ.URL(routes.URLFor("choresCreate")) }>Create your first chore</a> or 
 						<a href={ templ.URL(routes.URLFor("tasksCreate")) }>create your first task</a>!
 					</p>
 				</div>
 			} else {
-				for _, item := range items {
-					<div class="col-12 col-md-6 col-xl-4 p-2">
-						if item.Type == "chore" {
-							<div
-								class="chore-card"
-								data-bs-toggle="modal"
-								data-bs-target="#manageChoreModal"
-								data-name={ item.Name }
-								data-id={ fmt.Sprintf("%d", item.ID) }
-								data-date={ item.Date.Format("Monday January 02, 2006") }
-								data-interval={ item.Interval }
-							>
-								{ item.Name } ({ item.Date.Format("Jan 02, 2006") })
-							</div>
-						} else {
-							<a href={ templ.URL(routes.URLFor("tasksDetail", item.ID)) } class="link-dark">
-								<div class="task-card">
-									{ item.Name } ({ item.Date.Format("Jan 02, 2006") })
-								</div>
-							</a>
-						}
-					</div>
-				}
+				@itemsBatch(items, nextOffset, hasMore)
 			}
 		</div>
 	</div>
@@ -76,14 +94,14 @@ templ choresAndTasksWidget(items []CombinedItem) {
 	</div>
 }
 
-templ home(items []CombinedItem) {
+templ home(items []CombinedItem, nextOffset int, hasMore bool) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@views.Head()
 		<body class="min-vh-100" style="background-color: #67806f">
 			@views.Navbar("home")
 			<div class="container main-panel">
-				@choresAndTasksWidget(items)
+				@choresAndTasksWidget(items, nextOffset, hasMore)
 			</div>
 			@views.Footer() {
 				<script>
@@ -103,6 +121,49 @@ templ home(items []CombinedItem) {
                         const choreIDEl = document.querySelector("#manageChoreID")
                         if (choreIDEl) choreIDEl.value = data.id
                     })
+
+                    // Infinite scroll: when the "Loading more…" sentinel scrolls into
+                    // view, fetch the next batch of cards and append them.
+                    const itemsRow = document.querySelector("#itemsRow")
+                    let loadingMore = false
+                    const sentinelObserver = new IntersectionObserver((entries) => {
+                        if (entries.some((entry) => entry.isIntersecting)) loadMore()
+                    }, { rootMargin: "200px" })
+
+                    function watchSentinel() {
+                        const sentinel = document.querySelector("#loadMoreSentinel")
+                        if (sentinel) sentinelObserver.observe(sentinel)
+                    }
+
+                    async function loadMore() {
+                        const sentinel = document.querySelector("#loadMoreSentinel")
+                        if (loadingMore || !sentinel) return
+                        loadingMore = true
+                        try {
+                            const resp = await fetch("/?offset=" + encodeURIComponent(sentinel.dataset.nextOffset), {
+                                credentials: "same-origin",
+                            })
+                            if (resp.redirected) {
+                                // Session expired: the server sent us to the login page.
+                                window.location.href = resp.url
+                                return
+                            }
+                            if (!resp.ok) throw new Error("HTTP " + resp.status)
+                            const html = await resp.text()
+                            sentinelObserver.unobserve(sentinel)
+                            sentinel.remove()
+                            itemsRow.insertAdjacentHTML("beforeend", html)
+                            watchSentinel()
+                        } catch (err) {
+                            // Leave the sentinel in place and try again shortly.
+                            sentinelObserver.unobserve(sentinel)
+                            setTimeout(() => sentinelObserver.observe(sentinel), 3000)
+                        } finally {
+                            loadingMore = false
+                        }
+                    }
+
+                    watchSentinel()
 		        </script>
 			}
 		</body>

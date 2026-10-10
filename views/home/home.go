@@ -1,23 +1,20 @@
 package home
 
 import (
-	"context"
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
 	"goDoChores/routes"
 	"goDoChores/views/reminders"
-	"log"
 	"net/http"
 	"sort"
+	"strconv"
 	"time"
-
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 // CombinedItem represents either a chore reminder or a task for display
 type CombinedItem struct {
-	ID          interface{} // uint for tasks, int for chore reminders
+	ID          interface{} // task ID for tasks, reminder ID for chore reminders
 	Name        string
 	Date        time.Time
 	Type        string // "chore" or "task"
@@ -25,14 +22,20 @@ type CombinedItem struct {
 	Interval    string // only for chores
 }
 
+const (
+	// initialBatch is how many items the home page renders up front.
+	initialBatch = 12
+	// moreBatch is how many items each infinite-scroll request adds.
+	moreBatch = 6
+)
+
 func GetTasksForHome(userID uint) ([]models.Task, error) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		return nil, err
-	}
+	db := database.DB
 
 	var tasks []models.Task
-	db.Where(models.Task{UserID: userID}).Order("date ASC").Limit(6).Find(&tasks)
+	if result := db.Where("user_id = ?", userID).Order("date ASC").Find(&tasks); result.Error != nil {
+		return nil, result.Error
+	}
 
 	return tasks, nil
 }
@@ -75,12 +78,53 @@ func GetCombinedItems(userID uint) ([]CombinedItem, error) {
 		})
 	}
 
-	// Sort by date (earliest first)
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].Date.Before(items[j].Date)
-	})
+	sortItems(items)
 
 	return items, nil
+}
+
+// sortItems orders items by date, earliest first. Items on the same date are
+// ordered by type and ID so the order is identical on every request; otherwise
+// a batch boundary inside a run of equal dates could repeat or skip items.
+func sortItems(items []CombinedItem) {
+	sort.SliceStable(items, func(i, j int) bool {
+		a, b := items[i], items[j]
+		if !a.Date.Equal(b.Date) {
+			return a.Date.Before(b.Date)
+		}
+		if a.Type != b.Type {
+			return a.Type < b.Type
+		}
+		return idNumber(a.ID) < idNumber(b.ID)
+	})
+}
+
+func idNumber(id interface{}) uint64 {
+	switch v := id.(type) {
+	case uint:
+		return uint64(v)
+	case int:
+		return uint64(v)
+	}
+	return 0
+}
+
+// pageItems returns the slice of items to render for the given offset, the
+// offset of the following batch, and whether any items remain after this one.
+// Offset 0 is the first page (initialBatch items); later offsets get moreBatch.
+func pageItems(items []CombinedItem, offset int) (page []CombinedItem, nextOffset int, hasMore bool) {
+	if offset < 0 {
+		offset = 0
+	}
+	if offset > len(items) {
+		offset = len(items)
+	}
+	size := moreBatch
+	if offset == 0 {
+		size = initialBatch
+	}
+	end := min(offset+size, len(items))
+	return items[offset:end], end, end < len(items)
 }
 
 func Home(w http.ResponseWriter, r *http.Request) {
@@ -90,14 +134,28 @@ func Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	offset := 0
+	if raw := r.URL.Query().Get("offset"); raw != "" {
+		offset, err = strconv.Atoi(raw)
+		if err != nil || offset < 0 {
+			http.Error(w, "Invalid offset", http.StatusBadRequest)
+			return
+		}
+	}
+
 	combinedItems, err := GetCombinedItems(userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	page, nextOffset, hasMore := pageItems(combinedItems, offset)
 
-	component := home(combinedItems)
-	renderErr := component.Render(context.Background(), w)
+	// Later batches (infinite scroll) are just the cards, not a full page.
+	component := home(page, nextOffset, hasMore)
+	if offset > 0 {
+		component = itemsBatch(page, nextOffset, hasMore)
+	}
+	renderErr := component.Render(r.Context(), w)
 	if renderErr != nil {
 		http.Error(w, renderErr.Error(), http.StatusInternalServerError)
 	}
@@ -106,54 +164,55 @@ func Home(w http.ResponseWriter, r *http.Request) {
 func HomePost(w http.ResponseWriter, r *http.Request) {
 	parseErr := r.ParseForm()
 	if parseErr != nil {
-		http.Error(w, parseErr.Error(), http.StatusInternalServerError)
+		http.Error(w, parseErr.Error(), http.StatusBadRequest)
+		return
 	}
-	log.Printf("%v", r.PostForm)
 	reminderID := r.PostForm.Get("reminderID")
 	if reminderID == "" {
 		http.Error(w, "ReminderID required", http.StatusBadRequest)
 		return
 	}
 
-	db, dbErr := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if dbErr != nil {
-		http.Error(w, dbErr.Error(), http.StatusInternalServerError)
+	db := database.DB
+
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
 	var reminder models.ChoreReminder
-	userID, err := auth.GetCurrentUserID(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	reminderQueryResult := db.Where(models.ChoreReminder{UserID: userID}).First(&reminder, reminderID)
+	reminderQueryResult := db.Where("user_id = ?", userID).First(&reminder, reminderID)
 	if reminderQueryResult.Error != nil {
-		http.Error(w, reminderQueryResult.Error.Error(), http.StatusInternalServerError)
+		http.Error(w, "Reminder not found", http.StatusNotFound)
 		return
 	}
-	action := r.PostForm.Get("action")
-	switch action {
+
+	switch r.PostForm.Get("action") {
 	case "delete":
-		db.Delete(&reminder, reminderID)
-		break
+		if result := db.Delete(&reminder); result.Error != nil {
+			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+			return
+		}
 	case "done":
 		if reminder.Interval == "Once" {
-			db.Delete(&reminder, reminderID)
-		} else {
-			newDate, err := models.GetNextReminderDate(reminder)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+			if result := db.Delete(&reminder); result.Error != nil {
+				http.Error(w, result.Error.Error(), http.StatusInternalServerError)
 				return
-			} else {
-				reminder.Date = newDate
-				db.Save(&reminder)
 			}
+			break
 		}
-		break
+		newDate, err := models.GetNextReminderDate(reminder)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		reminder.Date = newDate
+		if result := db.Save(&reminder); result.Error != nil {
+			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	http.Redirect(w, r, routes.URLFor("home"), http.StatusFound)
-	return
-
 }

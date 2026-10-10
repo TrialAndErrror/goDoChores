@@ -4,35 +4,33 @@ import (
 	"context"
 	"github.com/go-chi/chi/v5"
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
 	"goDoChores/routes"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"net/http"
 )
 
 func DetailGet(w http.ResponseWriter, r *http.Request) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	db := database.DB
 
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
 	}
 	reminderID := chi.URLParam(r, "reminderID")
 	var reminder models.ChoreReminder
-	reminderQueryResult := db.Where(models.ChoreReminder{UserID: userID}).First(&reminder, reminderID)
+	reminderQueryResult := db.Where("user_id = ?", userID).First(&reminder, reminderID)
 	if reminderQueryResult.Error != nil {
-		http.Error(w, reminderQueryResult.Error.Error(), http.StatusInternalServerError)
+		http.Error(w, "Reminder not found", http.StatusNotFound)
+		return
 	}
 
 	var chore models.Chore
 	choreQueryResult := db.First(&chore, reminder.ChoreID)
 	if choreQueryResult.Error != nil {
-		http.Error(w, choreQueryResult.Error.Error(), http.StatusInternalServerError)
+		http.Error(w, "Chore not found", http.StatusNotFound)
+		return
 	}
 
 	component := remindersDetailPage(chore, reminder)
@@ -43,37 +41,41 @@ func DetailGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func DetailPost(w http.ResponseWriter, r *http.Request) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	db := database.DB
 
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
 	}
 	reminderID := chi.URLParam(r, "reminderID")
 	var reminder models.ChoreReminder
-	reminderQueryResult := db.Where(models.ChoreReminder{UserID: userID}).First(&reminder, reminderID)
+	reminderQueryResult := db.Where("user_id = ?", userID).First(&reminder, reminderID)
 	if reminderQueryResult.Error != nil {
-		http.Error(w, reminderQueryResult.Error.Error(), http.StatusInternalServerError)
+		http.Error(w, "Reminder not found", http.StatusNotFound)
+		return
 	}
 
 	var chore models.Chore
 	choreQueryResult := db.First(&chore, reminder.ChoreID)
 	if choreQueryResult.Error != nil {
-		http.Error(w, choreQueryResult.Error.Error(), http.StatusInternalServerError)
+		http.Error(w, "Chore not found", http.StatusNotFound)
+		return
 	}
 
 	parseErr := r.ParseForm()
 	if parseErr != nil {
-		http.Error(w, parseErr.Error(), http.StatusInternalServerError)
+		http.Error(w, parseErr.Error(), http.StatusBadRequest)
+		return
 	}
 
 	if r.PostFormValue("action") == "delete" {
-		db.Delete(&reminder)
+		if result := db.Delete(&reminder); result.Error != nil {
+			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+			return
+		}
 		http.Redirect(w, r, routes.URLFor("remindersList"), http.StatusFound)
+		return
 	}
 
 	component := remindersDetailPage(chore, reminder)

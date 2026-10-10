@@ -4,14 +4,13 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-	"time"
 
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
+	"goDoChores/routes"
 
 	"github.com/go-chi/chi/v5"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func EditGet(w http.ResponseWriter, r *http.Request) {
@@ -22,11 +21,7 @@ func EditGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
-		return
-	}
+	db := database.DB
 
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
@@ -35,7 +30,7 @@ func EditGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var reminder models.ChoreReminder
-	result := db.First(&reminder, id)
+	result := db.Where("user_id = ?", userID).First(&reminder, id)
 	if result.Error != nil {
 		http.Error(w, "Reminder not found", http.StatusNotFound)
 		return
@@ -45,7 +40,9 @@ func EditGet(w http.ResponseWriter, r *http.Request) {
 	var chores []models.Chore
 	db.Where(models.Chore{UserID: userID}).Find(&chores)
 
-	remindersEditPage(reminder, chores, models.GetIntervalNames()).Render(context.Background(), w)
+	if renderErr := remindersEditPage(reminder, chores, models.GetIntervalNames()).Render(context.Background(), w); renderErr != nil {
+		http.Error(w, renderErr.Error(), http.StatusInternalServerError)
+	}
 }
 
 func EditPost(w http.ResponseWriter, r *http.Request) {
@@ -56,14 +53,16 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	db := database.DB
+
+	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
 	var reminder models.ChoreReminder
-	result := db.First(&reminder, id)
+	result := db.Where("user_id = ?", userID).First(&reminder, id)
 	if result.Error != nil {
 		http.Error(w, "Reminder not found", http.StatusNotFound)
 		return
@@ -74,19 +73,19 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update reminder fields
-	choreIDStr := r.FormValue("choreID")
-	if choreID, err := strconv.ParseUint(choreIDStr, 10, 32); err == nil {
-		reminder.ChoreID = choreID
+	// Validate the submitted fields the same way create does.
+	updated, err := models.ChoreReminderFromForm(r.PostForm, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
-
-	dateStr := r.FormValue("date")
-	dateFormatString := "2006-01-02"
-	if date, err := time.Parse(dateFormatString, dateStr); err == nil {
-		reminder.Date = date
+	if !userOwnsChore(db, userID, updated.ChoreID) {
+		http.Error(w, "Chore not found", http.StatusBadRequest)
+		return
 	}
-
-	reminder.Interval = r.FormValue("interval")
+	reminder.ChoreID = updated.ChoreID
+	reminder.Date = updated.Date
+	reminder.Interval = updated.Interval
 
 	// Save the updated reminder
 	if err := db.Save(&reminder).Error; err != nil {
@@ -95,5 +94,5 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Redirect to the reminder detail page
-	http.Redirect(w, r, "/reminders/"+reminderID+"/", http.StatusSeeOther)
+	http.Redirect(w, r, routes.URLFor("remindersDetail", reminder.ID), http.StatusSeeOther)
 }

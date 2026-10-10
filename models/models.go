@@ -3,7 +3,9 @@ package models
 import (
 	"errors"
 	"net/url"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -21,14 +23,22 @@ type Chore struct {
 }
 
 func ChoreFromForm(data url.Values, userID uint) (Chore, error) {
+	name := strings.TrimSpace(data.Get("name"))
+	if name == "" {
+		return Chore{}, errors.New("name is required")
+	}
+
 	timeString := data.Get("time")
 	timeValue, timeParseErr := strconv.Atoi(timeString)
 	if timeParseErr != nil {
 		return Chore{}, timeParseErr
 	}
+	if timeValue < 0 {
+		return Chore{}, errors.New("time cannot be negative")
+	}
 
 	chore := Chore{
-		Name:        data.Get("name"),
+		Name:        name,
 		Description: data.Get("description"),
 		Time:        timeValue,
 		UserID:      userID,
@@ -46,17 +56,17 @@ type ChoreReminder struct {
 	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
-var ValidIntervals = map[string]bool{
-	"Daily":   true,
-	"Weekly":  true,
-	"Monthly": true,
-	"Annual":  true,
-	"Once":    true,
+// intervals is the single, ordered list of valid reminder intervals.
+var intervals = []string{"Daily", "Weekly", "Monthly", "Annual", "Once"}
+
+// GetIntervalNames returns a copy of the valid interval names, in display order.
+func GetIntervalNames() []string {
+	return slices.Clone(intervals)
 }
 
-// GetIntervalNames returns a slice of valid interval names
-func GetIntervalNames() []string {
-	return []string{"Daily", "Weekly", "Monthly", "Annual", "Once"}
+// IsValidInterval reports whether name is a known reminder interval.
+func IsValidInterval(name string) bool {
+	return slices.Contains(intervals, name)
 }
 
 func ChoreReminderFromForm(data url.Values, userID uint) (ChoreReminder, error) {
@@ -74,7 +84,7 @@ func ChoreReminderFromForm(data url.Values, userID uint) (ChoreReminder, error) 
 	}
 
 	interval := data.Get("interval")
-	if !ValidIntervals[interval] {
+	if !IsValidInterval(interval) {
 		return ChoreReminder{}, errors.New("invalid interval")
 	}
 
@@ -88,7 +98,7 @@ func ChoreReminderFromForm(data url.Values, userID uint) (ChoreReminder, error) 
 
 }
 
-func GetNextReminderDate(reminder ChoreReminder) (newDate time.Time, error error) {
+func GetNextReminderDate(reminder ChoreReminder) (time.Time, error) {
 	switch reminder.Interval {
 	case "Daily":
 		return time.Now().AddDate(0, 0, 1), nil
@@ -108,6 +118,10 @@ type User struct {
 	Username     string `gorm:"uniqueIndex;not null"`
 	Email        string `gorm:"uniqueIndex;not null"`
 	PasswordHash string `gorm:"not null"`
+
+	// SessionVersion is stamped into every login token. Bumping it (on logout
+	// or a password change) invalidates all tokens issued before.
+	SessionVersion uint `gorm:"not null;default:0"`
 
 	Chores         []Chore
 	ChoreReminders []ChoreReminder
@@ -139,6 +153,11 @@ type Task struct {
 }
 
 func TaskFromForm(data url.Values, userID uint) (Task, error) {
+	name := strings.TrimSpace(data.Get("name"))
+	if name == "" {
+		return Task{}, errors.New("name is required")
+	}
+
 	dateString := data.Get("date")
 	dateFormatString := "2006-01-02"
 	date, dateParseErr := time.Parse(dateFormatString, dateString)
@@ -147,7 +166,7 @@ func TaskFromForm(data url.Values, userID uint) (Task, error) {
 	}
 
 	task := Task{
-		Name:        data.Get("name"),
+		Name:        name,
 		Description: data.Get("description"),
 		Date:        date,
 		UserID:      userID,

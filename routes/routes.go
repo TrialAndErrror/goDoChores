@@ -2,7 +2,7 @@ package routes
 
 import "fmt"
 
-var Routes = map[string]string{
+var routes = map[string]string{
 	"login":           "/login",
 	"home":            "/",
 	"choresList":      "/chores/",
@@ -21,5 +21,9 @@ var Routes = map[string]string{
 }
 
 func URLFor(route string, args ...any) string {
-	return fmt.Sprintf(Routes[route], args...)
+	pattern, ok := routes[route]
+	if !ok {
+		panic("routes: unknown route " + route)
+	}
+	return fmt.Sprintf(pattern, args...)
 }
