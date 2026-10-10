@@ -3,10 +3,15 @@ package database
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"time"
+
+	"goDoChores/models"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // DB is the shared database handle. It is set by Open and must not be used
@@ -25,10 +30,29 @@ func Path() string {
 func Open() error {
 	// busy_timeout makes concurrent writers wait instead of failing with
 	// "database is locked".
-	db, err := gorm.Open(sqlite.Open("file:"+Path()+"?_busy_timeout=5000"), &gorm.Config{})
+	// "Record not found" is an ordinary outcome (an unknown ID, a username that
+	// is free), not something to log with a stack of SQL every time.
+	quiet := logger.New(log.New(os.Stderr, "\r\n", log.LstdFlags), logger.Config{
+		SlowThreshold:             200 * time.Millisecond,
+		LogLevel:                  logger.Warn,
+		IgnoreRecordNotFoundError: true,
+	})
+	db, err := gorm.Open(sqlite.Open("file:"+Path()+"?_busy_timeout=5000"), &gorm.Config{Logger: quiet})
 	if err != nil {
 		return fmt.Errorf("opening database %q: %w", Path(), err)
 	}
 	DB = db
+	return nil
+}
+
+// Migrate creates or updates every table the app uses. Both the server and the
+// CLI call it after Open so a fresh database always has its schema.
+func Migrate() error {
+	if DB == nil {
+		return fmt.Errorf("database is not open")
+	}
+	if err := DB.AutoMigrate(&models.Chore{}, &models.ChoreReminder{}, &models.Task{}, &models.User{}); err != nil {
+		return fmt.Errorf("migrating database: %w", err)
+	}
 	return nil
 }

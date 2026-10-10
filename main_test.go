@@ -39,7 +39,7 @@ func newTestApp(t *testing.T) (*testApp, seed) {
 	if err := database.Open(); err != nil {
 		t.Fatal(err)
 	}
-	if err := database.DB.AutoMigrate(&models.Chore{}, &models.ChoreReminder{}, &models.Task{}, &models.User{}); err != nil {
+	if err := database.Migrate(); err != nil {
 		t.Fatal(err)
 	}
 	tokenAuth := auth.Init(testSecret)

@@ -1,8 +1,6 @@
 module goDoChores
 
-go 1.23.0
-
-toolchain go1.23.6
+go 1.26.0
 
 require (
 	github.com/a-h/templ v0.3.833
@@ -33,6 +31,7 @@ require (
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/term v0.47.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 )

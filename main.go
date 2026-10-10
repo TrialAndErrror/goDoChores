@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"goDoChores/auth"
+	"goDoChores/cli"
 	"goDoChores/database"
-	"goDoChores/models"
 	"goDoChores/views/chores"
 	"goDoChores/views/home"
 	"goDoChores/views/reminders"
@@ -61,10 +61,8 @@ func runServer() {
 		log.Fatal(err)
 	}
 
-	// Migrate the schema
-	migrateErr := database.DB.AutoMigrate(&models.Chore{}, &models.ChoreReminder{}, &models.Task{}, &models.User{})
-	if migrateErr != nil {
-		log.Fatalf("failed to migrate database: %v", migrateErr)
+	if err := database.Migrate(); err != nil {
+		log.Fatal(err)
 	}
 
 	r := newRouter(tokenAuth)
@@ -87,6 +85,9 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "goDoChores",
 		Short: "goDoChores web server and CLI",
+		// Subcommands report their own errors; main prints them once.
+		SilenceErrors: true,
+		SilenceUsage:  true,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("Starting the server...")
 			runServer()
@@ -94,11 +95,11 @@ func main() {
 	}
 
 	// Add subcommands
-	rootCmd.AddCommand(auth.CreateUserCmd)
+	rootCmd.AddCommand(cli.Commands()...)
 
 	// Execute the CLI
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
 

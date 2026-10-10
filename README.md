@@ -19,15 +19,23 @@ Run in development:
 - Clone the repo
 - Copy `.env.example` to `.env` and set `JWT_SECRET` to a long random string
 - `templ generate` to compile the templates
-- `go run .` to start the dev server (it will default to port 3000); it creates the database tables on first start
-- In another terminal, `go run . create-user` to create a user for yourself (running it again for an existing username updates that user's email and password)
+- `go run . create-user` to create a user for yourself (this also creates the database on a fresh install)
+- `go run .` to start the dev server (it will default to port 3000)
 
 Basic deployment:
 - `templ generate` to compile the templates
 - `go build .` to build a binary
 - Copy the binary wherever you want it
 - Copy the .env.example file to .env and fill in `JWT_SECRET` (required), `PORT`, and optionally `DB_PATH` (SQLite file, default `test.db`) and `COOKIE_SECURE=true` if you serve over HTTPS
-- `./goDoChores` to run the server once so it creates the database tables (or whatever you called the binary, if you specified a name)
-- `./goDoChores create-user` to create the user
+- `./goDoChores create-user` to create the user (or whatever you called the binary, if you specified a name)
+- `./goDoChores` to run the server
+
+## Managing users
+
+There is no sign-up page, so users are managed from the command line. Every command creates the database and its tables first if they don't exist yet.
+
+- `./goDoChores create-user` asks for a username, email and password (the password prompt is hidden and asked twice). Pass `-u/--username`, `-e/--email` and `-p/--password` to skip the questions; note that `--password` can end up in your shell history. Running it for an existing username updates that user's email and password.
+- `./goDoChores list-users` shows every user with their ID, email, how many chores, reminders and tasks they have, and when they were created.
+- `./goDoChores delete-user <username>` permanently deletes a user **and all of their chores, reminders and tasks**. You have to type the username to confirm, or pass `-y/--yes` to skip that. Their logins stop working immediately, and the username and email can be used again.
 
 See `./.dev_scripts` for shell scripts that I use for building binaries and deploying to my server
