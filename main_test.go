@@ -523,3 +523,59 @@ func TestEditsValidateInput(t *testing.T) {
 		t.Errorf("chore edit redirected to %q", loc)
 	}
 }
+
+func TestDeletingAChoreDeletesItsReminders(t *testing.T) {
+	a, s := newTestApp(t)
+
+	// A second reminder on Alice's chore, on top of the seeded one.
+	var alice models.User
+	database.DB.Where("username = ?", "alice").First(&alice)
+	extra := models.ChoreReminder{ChoreID: uint64(s.aliceChore), Date: time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC), Interval: "Daily", UserID: alice.ID}
+	database.DB.Create(&extra)
+
+	// Sanity: before deleting, the chore and its reminders are visible.
+	if !strings.Contains(a.do("alice", "GET", "/reminders/", nil).Body.String(), "alice chore") {
+		t.Fatal("setup: reminder list should show alice's chore")
+	}
+
+	rec := a.do("alice", "POST", fmt.Sprintf("/chores/%d/", s.aliceChore), url.Values{"action": {"delete"}})
+	expectStatus(t, rec, http.StatusFound, "delete chore")
+
+	if n := count(t, &models.ChoreReminder{}, "chore_id = ?", s.aliceChore); n != 0 {
+		t.Errorf("%d reminders left behind for the deleted chore", n)
+	}
+	if count(t, &models.ChoreReminder{}, "id = ?", s.bobReminder) != 1 {
+		t.Error("another user's reminder was deleted")
+	}
+	for _, p := range []string{"/", "/reminders/"} {
+		if strings.Contains(a.do("alice", "GET", p, nil).Body.String(), "alice chore") {
+			t.Errorf("GET %s still shows reminders of the deleted chore", p)
+		}
+	}
+}
+
+func TestOrphanedRemindersAreHidden(t *testing.T) {
+	a, s := newTestApp(t)
+
+	// Reminders orphaned before cascading deletes existed: the chore is
+	// soft-deleted but the reminder row is still live.
+	if err := database.DB.Delete(&models.Chore{}, s.aliceChore).Error; err != nil {
+		t.Fatal(err)
+	}
+	if count(t, &models.ChoreReminder{}, "id = ?", s.aliceReminder) != 1 {
+		t.Fatal("setup: reminder should still exist")
+	}
+
+	// Sanity: the page does list reminders by chore name when the chore exists.
+	for _, p := range []string{"/", "/reminders/"} {
+		if !strings.Contains(a.do("bob", "GET", p, nil).Body.String(), "bob chore") {
+			t.Fatalf("setup: GET %s should list bob's reminder", p)
+		}
+	}
+
+	for _, p := range []string{"/", "/reminders/"} {
+		if strings.Contains(a.do("alice", "GET", p, nil).Body.String(), "alice chore") {
+			t.Errorf("GET %s shows an orphaned reminder", p)
+		}
+	}
+}

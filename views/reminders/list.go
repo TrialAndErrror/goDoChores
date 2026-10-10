@@ -21,7 +21,7 @@ func GetChoreReminderList(userID uint) ([]ChoreReminderListEntry, error) {
 	db := database.DB
 
 	var reminders []ChoreReminderListEntry
-	result := db.Model(&models.ChoreReminder{}).Select("chore_reminders.id as reminder_id, chore_reminders.interval,chore_reminders.date, chores.id as chore_id, chores.name").Joins("left join chores on chore_reminders.chore_id = chores.id").Where("chore_reminders.user_id = ?", userID).Scan(&reminders)
+	result := db.Model(&models.ChoreReminder{}).Select("chore_reminders.id as reminder_id, chore_reminders.interval,chore_reminders.date, chores.id as chore_id, chores.name").Joins("join chores on chore_reminders.chore_id = chores.id AND chores.deleted_at IS NULL").Where("chore_reminders.user_id = ?", userID).Scan(&reminders)
 	if result.Error != nil {
 		return nil, result.Error
 	}

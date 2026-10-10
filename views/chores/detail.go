@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"gorm.io/gorm"
 )
 
 func DetailGet(w http.ResponseWriter, r *http.Request) {
@@ -54,8 +55,16 @@ func DetailPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.PostFormValue("action") == "delete" {
-		if result := db.Delete(&chore); result.Error != nil {
-			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		// Delete the chore together with its reminders so none are left
+		// pointing at a chore that no longer exists.
+		deleteErr := db.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Where("chore_id = ? AND user_id = ?", chore.ID, userID).Delete(&models.ChoreReminder{}).Error; err != nil {
+				return err
+			}
+			return tx.Delete(&chore).Error
+		})
+		if deleteErr != nil {
+			http.Error(w, deleteErr.Error(), http.StatusInternalServerError)
 			return
 		}
 		http.Redirect(w, r, routes.URLFor("choresList"), http.StatusFound)
