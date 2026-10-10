@@ -3,9 +3,8 @@ package auth
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"goDoChores/database"
 	"goDoChores/models"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"log"
 )
 
@@ -13,10 +12,10 @@ var CreateUserCmd = &cobra.Command{
 	Use:   "create-user",
 	Short: "Create a new user",
 	Run: func(cmd *cobra.Command, args []string) {
-		db, dbConnectErr := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-		if dbConnectErr != nil {
-			panic("failed to connect database")
+		if err := database.Open(); err != nil {
+			log.Fatal(err)
 		}
+		db := database.DB
 
 		var username, email, password string
 

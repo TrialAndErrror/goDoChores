@@ -3,12 +3,12 @@ package reminders
 import (
 	"context"
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
 	"goDoChores/routes"
 	"goDoChores/views/chores"
 	"net/http"
 
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -39,11 +39,7 @@ func CreateGet(w http.ResponseWriter, r *http.Request) {
 
 }
 func CreatePost(w http.ResponseWriter, r *http.Request) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	db := database.DB
 	parseError := r.ParseForm()
 	if parseError != nil {
 		http.Error(w, parseError.Error(), http.StatusBadRequest)

@@ -3,18 +3,13 @@ package tasks
 import (
 	"context"
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
 	"net/http"
-
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func GetAllTasks(userID uint) ([]models.Task, error) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		return nil, err
-	}
+	db := database.DB
 
 	var tasks []models.Task
 	if result := db.Where("user_id = ?", userID).Order("date ASC").Find(&tasks); result.Error != nil {

@@ -3,14 +3,13 @@ package tasks
 import (
 	"context"
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
 	"goDoChores/routes"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func EditGet(w http.ResponseWriter, r *http.Request) {
@@ -89,11 +88,7 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 	existingTask.Description = updatedTask.Description
 	existingTask.Date = updatedTask.Date
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	db := database.DB
 
 	result := db.Save(existingTask)
 	if result.Error != nil {

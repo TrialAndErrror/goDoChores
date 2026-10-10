@@ -3,9 +3,8 @@ package reminders
 import (
 	"context"
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"net/http"
 	"time"
 )
@@ -19,10 +18,7 @@ type ChoreReminderListEntry struct {
 }
 
 func GetChoreReminderList(userID uint) ([]ChoreReminderListEntry, error) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		return nil, err
-	}
+	db := database.DB
 
 	var reminders []ChoreReminderListEntry
 	result := db.Model(&models.ChoreReminder{}).Select("chore_reminders.id as reminder_id, chore_reminders.interval,chore_reminders.date, chores.id as chore_id, chores.name").Joins("left join chores on chore_reminders.chore_id = chores.id").Where("chore_reminders.user_id = ?", userID).Scan(&reminders)

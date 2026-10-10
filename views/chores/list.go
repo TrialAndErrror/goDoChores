@@ -3,18 +3,13 @@ package chores
 import (
 	"context"
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
 	"net/http"
-
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func GetAllChores(userID uint) ([]models.Chore, error) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		return nil, err
-	}
+	db := database.DB
 
 	var chores []models.Chore
 	result := db.Preload("Reminders").Where("user_id = ?", userID).Find(&chores)

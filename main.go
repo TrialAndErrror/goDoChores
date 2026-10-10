@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
 	"goDoChores/views/chores"
 	"goDoChores/views/home"
@@ -14,8 +15,6 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -23,26 +22,20 @@ import (
 )
 
 func runServer() {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Error loading .env file; defaulting to environment variables.")
-	}
-
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET must be set (see .env.example)")
 	}
 	tokenAuth := auth.Init(jwtSecret)
 
-	db, dbConnectErr := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if dbConnectErr != nil {
-		panic("failed to connect database")
+	if err := database.Open(); err != nil {
+		log.Fatal(err)
 	}
 
 	// Migrate the schema
-	migrateErr := db.AutoMigrate(&models.Chore{}, &models.ChoreReminder{}, &models.Task{}, &models.User{})
+	migrateErr := database.DB.AutoMigrate(&models.Chore{}, &models.ChoreReminder{}, &models.Task{}, &models.User{})
 	if migrateErr != nil {
-		panic("failed to migrate database")
+		log.Fatalf("failed to migrate database: %v", migrateErr)
 	}
 
 	r := chi.NewRouter()
@@ -77,6 +70,10 @@ func runServer() {
 }
 
 func main() {
+	// Load .env (if any) up front so every command, including create-user,
+	// sees the same configuration. Real environment variables still win.
+	_ = godotenv.Load()
+
 	// Define the root command (runs the server by default)
 	var rootCmd = &cobra.Command{
 		Use:   "myapp",

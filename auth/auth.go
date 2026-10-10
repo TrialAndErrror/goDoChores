@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/go-chi/jwtauth/v5"
+	"goDoChores/database"
 	"goDoChores/models"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"time"
@@ -29,10 +28,7 @@ func secureCookies() bool {
 }
 
 func LoginUser(username string, password string) (string, error) {
-	db, dbErr := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if dbErr != nil {
-		return "", errors.New("cannot connect to database")
-	}
+	db := database.DB
 	var user models.User
 	tx := db.First(&user, "username = ?", username)
 	if tx.Error != nil {

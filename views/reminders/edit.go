@@ -7,11 +7,10 @@ import (
 	"time"
 
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
 
 	"github.com/go-chi/chi/v5"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func EditGet(w http.ResponseWriter, r *http.Request) {
@@ -22,11 +21,7 @@ func EditGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
-		return
-	}
+	db := database.DB
 
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
@@ -58,11 +53,7 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
-		return
-	}
+	db := database.DB
 
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {

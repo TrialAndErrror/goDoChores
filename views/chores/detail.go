@@ -3,21 +3,16 @@ package chores
 import (
 	"context"
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
 	"goDoChores/routes"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func DetailGet(w http.ResponseWriter, r *http.Request) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	db := database.DB
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -38,11 +33,7 @@ func DetailGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func DetailPost(w http.ResponseWriter, r *http.Request) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	db := database.DB
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)

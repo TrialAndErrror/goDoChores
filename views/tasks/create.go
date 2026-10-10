@@ -3,12 +3,10 @@ package tasks
 import (
 	"context"
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
 	"goDoChores/routes"
 	"net/http"
-
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func CreateGet(w http.ResponseWriter, r *http.Request) {
@@ -38,11 +36,7 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	db := database.DB
 
 	result := db.Create(&task)
 	if result.Error != nil {

@@ -3,15 +3,13 @@ package home
 import (
 	"context"
 	"goDoChores/auth"
+	"goDoChores/database"
 	"goDoChores/models"
 	"goDoChores/routes"
 	"goDoChores/views/reminders"
 	"net/http"
 	"sort"
 	"time"
-
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 // CombinedItem represents either a chore reminder or a task for display
@@ -25,10 +23,7 @@ type CombinedItem struct {
 }
 
 func GetTasksForHome(userID uint) ([]models.Task, error) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		return nil, err
-	}
+	db := database.DB
 
 	var tasks []models.Task
 	if result := db.Where("user_id = ?", userID).Order("date ASC").Limit(6).Find(&tasks); result.Error != nil {
@@ -116,11 +111,7 @@ func HomePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, dbErr := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if dbErr != nil {
-		http.Error(w, dbErr.Error(), http.StatusInternalServerError)
-		return
-	}
+	db := database.DB
 
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
