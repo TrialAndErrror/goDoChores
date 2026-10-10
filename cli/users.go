@@ -1,4 +1,5 @@
-// Package cli holds the user-administration commands (create, list, delete).
+// Package cli holds the administration commands: managing users, backing up and
+// restoring the database, and the container health check.
 package cli
 
 import (
