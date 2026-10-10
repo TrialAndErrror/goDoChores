@@ -1,0 +1,43 @@
+# One service, one named volume for the SQLite database.
+#
+# Use the scripts in .dev_scripts/ rather than calling this directly; they build
+# the image, load .env (or .env.production), and handle the production server.
+name: gochores
+
+services:
+  app:
+    image: ${IMAGE:-gochores:latest}
+    # Used by `docker compose build`. The scripts build with `docker build`
+    # themselves and always start with --no-build, so a server never builds.
+    build: .
+    restart: unless-stopped
+
+    # Secrets and settings: JWT_SECRET, COOKIE_SECURE, TRUSTED_ORIGINS, ...
+    env_file: ${ENV_FILE:-.env}
+    environment:
+      # Fixed inside the container; they override anything in the env file.
+      PORT: "3000"
+      DB_PATH: /data/chores.db
+
+    # Loopback only by default, for a reverse proxy running on the same host.
+    # Set BIND_ADDR=0.0.0.0 to expose it directly; HOST_PORT changes the port.
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:${HOST_PORT:-3000}:3000"
+
+    volumes:
+      - chores-data:/data
+
+    # The app gives running requests 10s to finish on SIGTERM; wait longer than that.
+    stop_grace_period: 15s
+
+    # Hardening: nothing but /data and /tmp is writable, and no extra privileges.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  chores-data:
