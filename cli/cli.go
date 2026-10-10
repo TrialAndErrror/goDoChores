@@ -16,9 +16,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// Commands returns the user-administration commands to attach to the root.
+// Commands returns the administration commands (users, backup/restore and the
+// container health check) to attach to the root command.
 func Commands() []*cobra.Command {
-	return []*cobra.Command{newCreateUserCmd(), newListUsersCmd(), newDeleteUserCmd()}
+	return []*cobra.Command{
+		newCreateUserCmd(), newListUsersCmd(), newDeleteUserCmd(),
+		newBackupCmd(), newRestoreCmd(), newHealthcheckCmd(),
+	}
 }
 
 // openDB opens the database and makes sure its tables exist, so every command
