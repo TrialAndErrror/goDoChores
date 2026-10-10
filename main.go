@@ -76,8 +76,8 @@ func main() {
 
 	// Define the root command (runs the server by default)
 	var rootCmd = &cobra.Command{
-		Use:   "myapp",
-		Short: "My Go App CLI and Server",
+		Use:   "goDoChores",
+		Short: "goDoChores web server and CLI",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("Starting the server...")
 			runServer()

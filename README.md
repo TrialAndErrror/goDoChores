@@ -17,16 +17,17 @@ Overall, this project is golang for the full stack. Apart from the golang standa
 
 Run in development:
 - Clone the repo
+- Copy `.env.example` to `.env` and set `JWT_SECRET` to a long random string
 - `templ generate` to compile the templates
-- `go run . create-user` to create a user for yourself
-- `go run .` to just run the dev server (it will default to port 3000)
+- `go run .` to start the dev server (it will default to port 3000); it creates the database tables on first start
+- In another terminal, `go run . create-user` to create a user for yourself (running it again for an existing username updates that user's email and password)
 
 Basic deployment:
 - `templ generate` to compile the templates
 - `go build .` to build a binary
 - Copy the binary wherever you want it
-- Copy the .env.example file to .env and fill out a specific port you want to use
-- `./goDoChores create-user` to create the user (or whatever you called the binary, if you specified a name)
-- `./goDoChores` to run the server
+- Copy the .env.example file to .env and fill in `JWT_SECRET` (required), `PORT`, and optionally `DB_PATH` (SQLite file, default `test.db`) and `COOKIE_SECURE=true` if you serve over HTTPS
+- `./goDoChores` to run the server once so it creates the database tables (or whatever you called the binary, if you specified a name)
+- `./goDoChores create-user` to create the user
 
-See `./dev-scripts` for shell scripts that I use for building binaries and deploying to my server
+See `./.dev_scripts` for shell scripts that I use for building binaries and deploying to my server

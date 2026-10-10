@@ -14,7 +14,7 @@ import (
 
 // CombinedItem represents either a chore reminder or a task for display
 type CombinedItem struct {
-	ID          interface{} // uint for tasks, int for chore reminders
+	ID          interface{} // task ID for tasks, reminder ID for chore reminders
 	Name        string
 	Date        time.Time
 	Type        string // "chore" or "task"
