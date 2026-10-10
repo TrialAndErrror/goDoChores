@@ -419,3 +419,39 @@ func TestMarkingRemindersDone(t *testing.T) {
 
 	expectStatus(t, a.do("alice", "POST", "/", url.Values{"action": {"done"}}), http.StatusBadRequest, "missing reminderID")
 }
+
+func TestTokensExpireAndDieWithTheirUser(t *testing.T) {
+	a, s := newTestApp(t)
+
+	ck := a.login("alice")
+	tok, err := jwtauth.VerifyToken(jwtauth.New("HS256", []byte(testSecret), nil), ck.Value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tok.Expiration().IsZero() {
+		t.Fatal("login token has no exp claim")
+	}
+	if d := time.Until(tok.Expiration()); d < 23*time.Hour || d > 25*time.Hour {
+		t.Errorf("token expires in %v, want about 24h", d)
+	}
+
+	expectStatus(t, a.do("alice", "GET", "/chores/", nil), http.StatusOK, "before user deletion")
+
+	// Deleting the user invalidates tokens already issued to them.
+	if err := database.DB.Delete(&models.User{}, "username = ?", "alice").Error; err != nil {
+		t.Fatal(err)
+	}
+	rec := a.do("alice", "GET", "/chores/", nil)
+	expectStatus(t, rec, http.StatusFound, "token of deleted user")
+	if loc := rec.Header().Get("Location"); loc != "/login" {
+		t.Errorf("redirect to %q, want /login", loc)
+	}
+	rec = a.do("alice", "POST", fmt.Sprintf("/chores/%d/", s.aliceChore), url.Values{"action": {"delete"}})
+	expectStatus(t, rec, http.StatusFound, "deleted user's POST")
+	if count(t, &models.Chore{}, "id = ?", s.aliceChore) != 1 {
+		t.Error("deleted user's token was still able to delete data")
+	}
+
+	// Other users are unaffected.
+	expectStatus(t, a.do("bob", "GET", "/chores/", nil), http.StatusOK, "other user")
+}

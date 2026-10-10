@@ -37,6 +37,7 @@ func newRouter(tokenAuth *jwtauth.JWTAuth) http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(jwtauth.Verifier(tokenAuth))
 		r.Use(auth.Authenticator(tokenAuth))
+		r.Use(auth.UserExists)
 
 		r.Mount("/", home.HomeRouter())
 		r.Mount("/chores", chores.ChoresRouter())

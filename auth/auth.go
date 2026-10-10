@@ -13,6 +13,10 @@ import (
 
 var tokenAuth *jwtauth.JWTAuth
 
+// sessionLifetime is how long a login stays valid. It is applied to both the
+// token's exp claim and the cookie, so the two cannot drift apart.
+const sessionLifetime = 24 * time.Hour
+
 // Init sets up the shared JWT signer/verifier. It must be called once at
 // startup, before any request is served, and returns the instance so the
 // router can use the same one for verification.
@@ -43,7 +47,10 @@ func LoginUser(username string, password string) (string, error) {
 		return "", errors.New("auth not initialised")
 	}
 
-	_, tokenString, err := tokenAuth.Encode(map[string]interface{}{"user_id": user.ID})
+	_, tokenString, err := tokenAuth.Encode(map[string]interface{}{
+		"user_id": user.ID,
+		"exp":     time.Now().Add(sessionLifetime).Unix(),
+	})
 	if err != nil {
 		return "", errors.New("failed to generate token")
 	}
@@ -80,7 +87,7 @@ func LoginPost(w http.ResponseWriter, r *http.Request) {
 		Name:     "jwt",
 		Value:    token,
 		Path:     "/",
-		Expires:  time.Now().Add(24 * time.Hour),
+		Expires:  time.Now().Add(sessionLifetime),
 		HttpOnly: true,
 		Secure:   secureCookies(),
 		SameSite: http.SameSiteStrictMode,
