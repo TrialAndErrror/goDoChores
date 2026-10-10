@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -22,14 +23,22 @@ type Chore struct {
 }
 
 func ChoreFromForm(data url.Values, userID uint) (Chore, error) {
+	name := strings.TrimSpace(data.Get("name"))
+	if name == "" {
+		return Chore{}, errors.New("name is required")
+	}
+
 	timeString := data.Get("time")
 	timeValue, timeParseErr := strconv.Atoi(timeString)
 	if timeParseErr != nil {
 		return Chore{}, timeParseErr
 	}
+	if timeValue < 0 {
+		return Chore{}, errors.New("time cannot be negative")
+	}
 
 	chore := Chore{
-		Name:        data.Get("name"),
+		Name:        name,
 		Description: data.Get("description"),
 		Time:        timeValue,
 		UserID:      userID,
@@ -140,6 +149,11 @@ type Task struct {
 }
 
 func TaskFromForm(data url.Values, userID uint) (Task, error) {
+	name := strings.TrimSpace(data.Get("name"))
+	if name == "" {
+		return Task{}, errors.New("name is required")
+	}
+
 	dateString := data.Get("date")
 	dateFormatString := "2006-01-02"
 	date, dateParseErr := time.Parse(dateFormatString, dateString)
@@ -148,7 +162,7 @@ func TaskFromForm(data url.Values, userID uint) (Task, error) {
 	}
 
 	task := Task{
-		Name:        data.Get("name"),
+		Name:        name,
 		Description: data.Get("description"),
 		Date:        date,
 		UserID:      userID,

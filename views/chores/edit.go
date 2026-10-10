@@ -8,6 +8,7 @@ import (
 	"goDoChores/auth"
 	"goDoChores/database"
 	"goDoChores/models"
+	"goDoChores/routes"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -68,14 +69,15 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update chore fields
-	chore.Name = r.FormValue("name")
-	chore.Description = r.FormValue("description")
-
-	timeStr := r.FormValue("time")
-	if timeInt, err := strconv.Atoi(timeStr); err == nil {
-		chore.Time = timeInt
+	// Validate the submitted fields the same way create does.
+	updated, err := models.ChoreFromForm(r.PostForm, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
+	chore.Name = updated.Name
+	chore.Description = updated.Description
+	chore.Time = updated.Time
 
 	// Save the updated chore
 	if err := db.Save(&chore).Error; err != nil {
@@ -84,5 +86,5 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Redirect to the chore detail page
-	http.Redirect(w, r, "/chores/"+choreID+"/", http.StatusSeeOther)
+	http.Redirect(w, r, routes.URLFor("choresDetail", chore.ID), http.StatusSeeOther)
 }

@@ -19,6 +19,21 @@ func TestChoreFromForm(t *testing.T) {
 		t.Errorf("unexpected chore: %+v", chore)
 	}
 
+	// Surrounding whitespace is trimmed from the name.
+	trimmed, err := ChoreFromForm(url.Values{"name": {"  Dishes  "}, "time": {"0"}}, 1)
+	if err != nil || trimmed.Name != "Dishes" || trimmed.Time != 0 {
+		t.Errorf("trim/zero time: got %+v, %v", trimmed, err)
+	}
+
+	for _, name := range []string{"", "   "} {
+		if _, err := ChoreFromForm(url.Values{"name": {name}, "time": {"5"}}, 1); err == nil {
+			t.Errorf("name %q: expected error", name)
+		}
+	}
+	if _, err := ChoreFromForm(url.Values{"name": {"x"}, "time": {"-5"}}, 1); err == nil {
+		t.Error("negative time: expected error")
+	}
+
 	for _, bad := range []string{"", "abc", "1.5"} {
 		if _, err := ChoreFromForm(url.Values{"name": {"x"}, "time": {bad}}, 1); err == nil {
 			t.Errorf("time %q: expected error", bad)
@@ -71,6 +86,11 @@ func TestTaskFromForm(t *testing.T) {
 
 	if _, err := TaskFromForm(url.Values{"name": {"x"}, "date": {"nope"}}, 1); err == nil {
 		t.Error("expected error for bad date")
+	}
+	for _, name := range []string{"", "  "} {
+		if _, err := TaskFromForm(url.Values{"name": {name}, "date": {"2026-11-01"}}, 1); err == nil {
+			t.Errorf("name %q: expected error", name)
+		}
 	}
 }
 
