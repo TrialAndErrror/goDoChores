@@ -41,7 +41,19 @@ if [[ $TARGET == prod ]]; then
             if DOCKER_HOST=$DOCKER_REMOTE docker info >/dev/null 2>&1; then ok "docker over ssh:// works (used for all commands)"
             else bad "docker over ssh:// failed; the server's docker CLI must be reachable as 'docker system dial-stdio'"; fi
             ssh "$DEPLOY_HOST" 'docker volume inspect $VOLUME >/dev/null 2>&1' && ok "data volume exists (app has been deployed before)" || note "no data volume yet (first deploy)"
-            note "free disk on the server: $(ssh "$DEPLOY_HOST" "df -h / | tail -1 | awk '{print \$4}'")"
+            # Free space where Docker keeps images and volumes (not necessarily /).
+            # df -P guarantees one line per filesystem; the 4th column is KiB available.
+            docker_root=$(ssh "$DEPLOY_HOST" "docker info --format '{{.DockerRootDir}}'" 2>/dev/null || true)
+            free_kb=$(ssh "$DEPLOY_HOST" "df -Pk '${docker_root:-/}' | awk 'NR==2 {print \$4}'" 2>/dev/null || true)
+            if [[ ! $free_kb =~ ^[0-9]+$ ]]; then
+                note "could not read free disk space on the server (check it yourself: df -h ${docker_root:-/})"
+            elif (( free_kb < 512 * 1024 )); then
+                bad "only $((free_kb / 1024)) MiB free on the server where Docker stores data (${docker_root:-/}); the image needs about 100 MiB plus room for the database"
+            elif (( free_kb < 2 * 1024 * 1024 )); then
+                note "$((free_kb / 1024)) MiB free on the server (${docker_root:-/}); enough, but getting low"
+            else
+                ok "$((free_kb / 1024 / 1024)) GiB free on the server (${docker_root:-/})"
+            fi
         else
             bad "that user cannot run docker (is docker installed? is the user in the docker group?)"
         fi

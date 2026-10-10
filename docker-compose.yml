@@ -27,6 +27,14 @@ services:
     volumes:
       - chores-data:/data
 
+    # Docker keeps a container's output forever by default, which can fill the
+    # server's disk over months. Keep at most 3 files of 10 MB (30 MB).
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
     # The app gives running requests 10s to finish on SIGTERM; wait longer than that.
     stop_grace_period: 15s
 

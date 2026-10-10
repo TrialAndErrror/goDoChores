@@ -293,6 +293,7 @@ Start with `.dev_scripts/doctor.sh` (add `--prod` for the server) and `.dev_scri
 | `DEPRECATED: The legacy builder` message during a build | Harmless; your Docker has no `buildx` plugin. Installing `docker-buildx` removes the notice. |
 | Everyone was signed out after a deploy | Expected if `JWT_SECRET` changed. Logging out, or changing a user's password with `user.sh create`, also signs that user out of every device. |
 | Disk filling up on the server | Old images pile up after many deploys: `ssh HOST docker image prune -f` removes only unused, untagged ones. |
+| `no space left on device`, or `doctor.sh --prod` reports low disk | Check `ssh HOST df -h /`. A common cause is another container's unbounded log: `sudo du -xh --max-depth=2 /var/lib/docker`, then look for a large `containers/<id>/<id>-json.log`. Empty it with `sudo truncate -s 0 <that file>` (safe while the container runs) and cap that app's logs with a `logging:` block like the one in this repo's `docker-compose.yml`. Don't use `docker system prune -a` or `docker volume prune` on a server that runs other apps. |
 
 Manual access when you need it:
 
