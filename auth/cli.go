@@ -40,15 +40,16 @@ var CreateUserCmd = &cobra.Command{
 
 		// Create user and save to database
 		var existingUser models.User
-		db.Where(models.User{Username: username}).First(&models.User{})
-		if existingUser.Username != "" {
-			fmt.Println("User already exists")
+		findErr := db.Where("username = ?", username).First(&existingUser).Error
+		if findErr == nil {
+			fmt.Println("User already exists; updating email and password")
 			existingUser.Email = email
-			existingUser.Username = username
-			db.Save(&existingUser)
 
 			if err := existingUser.SetPassword(password); err != nil {
 				log.Fatal("Error hashing password:", err)
+			}
+			if err := db.Save(&existingUser).Error; err != nil {
+				log.Fatal("Error saving user:", err)
 			}
 			fmt.Println("User saved successfully:", existingUser.Username)
 		} else {

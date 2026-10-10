@@ -6,7 +6,6 @@ import (
 	"goDoChores/models"
 	"goDoChores/routes"
 	"goDoChores/views/reminders"
-	"log"
 	"net/http"
 	"sort"
 	"time"
@@ -108,7 +107,6 @@ func HomePost(w http.ResponseWriter, r *http.Request) {
 	if parseErr != nil {
 		http.Error(w, parseErr.Error(), http.StatusInternalServerError)
 	}
-	log.Printf("%v", r.PostForm)
 	reminderID := r.PostForm.Get("reminderID")
 	if reminderID == "" {
 		http.Error(w, "ReminderID required", http.StatusBadRequest)

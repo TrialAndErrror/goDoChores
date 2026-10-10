@@ -22,14 +22,18 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 )
 
-var tokenAuth *jwtauth.JWTAuth
-
-func init() {
-	// Initialise JWT token auth
-	tokenAuth = jwtauth.New("HS256", []byte("secret"), nil)
-}
-
 func runServer() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env file; defaulting to environment variables.")
+	}
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET must be set (see .env.example)")
+	}
+	tokenAuth := auth.Init(jwtSecret)
+
 	db, dbConnectErr := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if dbConnectErr != nil {
 		panic("failed to connect database")
@@ -62,11 +66,6 @@ func runServer() {
 
 		r.Post("/logout", auth.LogoutPost)
 	})
-
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Error loading .env file; defaulting to environment variables.")
-	}
 
 	// Get the port from the environment variable
 	port := os.Getenv("PORT")

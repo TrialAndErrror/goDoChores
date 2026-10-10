@@ -35,7 +35,7 @@ func EditGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var reminder models.ChoreReminder
-	result := db.First(&reminder, id)
+	result := db.Where("user_id = ?", userID).First(&reminder, id)
 	if result.Error != nil {
 		http.Error(w, "Reminder not found", http.StatusNotFound)
 		return
@@ -62,8 +62,14 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
 	var reminder models.ChoreReminder
-	result := db.First(&reminder, id)
+	result := db.Where("user_id = ?", userID).First(&reminder, id)
 	if result.Error != nil {
 		http.Error(w, "Reminder not found", http.StatusNotFound)
 		return
@@ -76,7 +82,16 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 
 	// Update reminder fields
 	choreIDStr := r.FormValue("choreID")
-	if choreID, err := strconv.ParseUint(choreIDStr, 10, 32); err == nil {
+	if choreIDStr != "" {
+		choreID, err := strconv.ParseUint(choreIDStr, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid chore ID", http.StatusBadRequest)
+			return
+		}
+		if !userOwnsChore(db, userID, choreID) {
+			http.Error(w, "Chore not found", http.StatusBadRequest)
+			return
+		}
 		reminder.ChoreID = choreID
 	}
 

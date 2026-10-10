@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"goDoChores/auth"
 	"goDoChores/models"
 
 	"github.com/go-chi/chi/v5"
@@ -26,8 +27,14 @@ func EditGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
 	var chore models.Chore
-	result := db.First(&chore, id)
+	result := db.Where("user_id = ?", userID).First(&chore, id)
 	if result.Error != nil {
 		http.Error(w, "Chore not found", http.StatusNotFound)
 		return
@@ -50,8 +57,14 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
 	var chore models.Chore
-	result := db.First(&chore, id)
+	result := db.Where("user_id = ?", userID).First(&chore, id)
 	if result.Error != nil {
 		http.Error(w, "Chore not found", http.StatusNotFound)
 		return

@@ -7,12 +7,26 @@ import (
 	"goDoChores/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
 var tokenAuth *jwtauth.JWTAuth
+
+// Init sets up the shared JWT signer/verifier. It must be called once at
+// startup, before any request is served, and returns the instance so the
+// router can use the same one for verification.
+func Init(secret string) *jwtauth.JWTAuth {
+	tokenAuth = jwtauth.New("HS256", []byte(secret), nil)
+	return tokenAuth
+}
+
+// secureCookies reports whether the jwt cookie should be marked Secure.
+// Set COOKIE_SECURE=true when serving over HTTPS.
+func secureCookies() bool {
+	return os.Getenv("COOKIE_SECURE") == "true"
+}
 
 func LoginUser(username string, password string) (string, error) {
 	db, dbErr := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
@@ -29,7 +43,9 @@ func LoginUser(username string, password string) (string, error) {
 		return "", errors.New("invalid username or password")
 	}
 
-	tokenAuth = jwtauth.New("HS256", []byte("secret"), nil)
+	if tokenAuth == nil {
+		return "", errors.New("auth not initialised")
+	}
 
 	_, tokenString, err := tokenAuth.Encode(map[string]interface{}{"user_id": user.ID})
 	if err != nil {
@@ -50,16 +66,17 @@ func LoginPost(w http.ResponseWriter, r *http.Request) {
 
 	parseErr := r.ParseForm()
 	if parseErr != nil {
-		http.Error(w, parseErr.Error(), http.StatusInternalServerError)
+		http.Error(w, parseErr.Error(), http.StatusBadRequest)
+		return
 	}
-	log.Printf("%v", r.PostForm)
 
 	username := r.PostForm.Get("username")
 	password := r.PostForm.Get("password")
 
 	token, err := LoginUser(username, password)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
 	}
 
 	// Create a cookie to store the token.
@@ -69,7 +86,7 @@ func LoginPost(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Expires:  time.Now().Add(24 * time.Hour),
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   secureCookies(),
 		SameSite: http.SameSiteStrictMode,
 	}
 	http.SetCookie(w, &cookie)
@@ -86,7 +103,7 @@ func LogoutPost(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Expires:  time.Unix(0, 0), // Set expiry in the past
 		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
+		Secure:   secureCookies(),
 		SameSite: http.SameSiteStrictMode,
 	}
 	http.SetCookie(w, &cookie)

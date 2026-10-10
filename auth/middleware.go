@@ -15,11 +15,13 @@ func Authenticator(ja *jwtauth.JWTAuth) func(http.Handler) http.Handler {
 			if err != nil {
 				log.Printf("Authenticator Err: Error parsing token: %v", err)
 				http.Redirect(w, r, routes.URLFor("login"), http.StatusFound)
+				return
 			}
 
 			if token == nil {
 				log.Printf("Authenticator Err: No Token")
 				http.Redirect(w, r, routes.URLFor("login"), http.StatusFound)
+				return
 			}
 
 			// Token is authenticated, pass it through
