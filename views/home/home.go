@@ -31,7 +31,9 @@ func GetTasksForHome(userID uint) ([]models.Task, error) {
 	}
 
 	var tasks []models.Task
-	db.Where(models.Task{UserID: userID}).Order("date ASC").Limit(6).Find(&tasks)
+	if result := db.Where("user_id = ?", userID).Order("date ASC").Limit(6).Find(&tasks); result.Error != nil {
+		return nil, result.Error
+	}
 
 	return tasks, nil
 }
@@ -105,7 +107,8 @@ func Home(w http.ResponseWriter, r *http.Request) {
 func HomePost(w http.ResponseWriter, r *http.Request) {
 	parseErr := r.ParseForm()
 	if parseErr != nil {
-		http.Error(w, parseErr.Error(), http.StatusInternalServerError)
+		http.Error(w, parseErr.Error(), http.StatusBadRequest)
+		return
 	}
 	reminderID := r.PostForm.Get("reminderID")
 	if reminderID == "" {
@@ -119,39 +122,44 @@ func HomePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var reminder models.ChoreReminder
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	reminderQueryResult := db.Where(models.ChoreReminder{UserID: userID}).First(&reminder, reminderID)
-	if reminderQueryResult.Error != nil {
-		http.Error(w, reminderQueryResult.Error.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
-	action := r.PostForm.Get("action")
-	switch action {
+
+	var reminder models.ChoreReminder
+	reminderQueryResult := db.Where("user_id = ?", userID).First(&reminder, reminderID)
+	if reminderQueryResult.Error != nil {
+		http.Error(w, "Reminder not found", http.StatusNotFound)
+		return
+	}
+
+	switch r.PostForm.Get("action") {
 	case "delete":
-		db.Delete(&reminder, reminderID)
-		break
+		if result := db.Delete(&reminder); result.Error != nil {
+			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+			return
+		}
 	case "done":
 		if reminder.Interval == "Once" {
-			db.Delete(&reminder, reminderID)
-		} else {
-			newDate, err := models.GetNextReminderDate(reminder)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+			if result := db.Delete(&reminder); result.Error != nil {
+				http.Error(w, result.Error.Error(), http.StatusInternalServerError)
 				return
-			} else {
-				reminder.Date = newDate
-				db.Save(&reminder)
 			}
+			break
 		}
-		break
+		newDate, err := models.GetNextReminderDate(reminder)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		reminder.Date = newDate
+		if result := db.Save(&reminder); result.Error != nil {
+			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	http.Redirect(w, r, routes.URLFor("home"), http.StatusFound)
-	return
-
 }

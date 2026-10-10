@@ -17,7 +17,9 @@ func GetAllTasks(userID uint) ([]models.Task, error) {
 	}
 
 	var tasks []models.Task
-	db.Where(models.Task{UserID: userID}).Order("date ASC").Find(&tasks)
+	if result := db.Where("user_id = ?", userID).Order("date ASC").Find(&tasks); result.Error != nil {
+		return nil, result.Error
+	}
 
 	return tasks, nil
 }

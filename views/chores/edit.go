@@ -40,7 +40,9 @@ func EditGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	choresEditForm(chore).Render(context.Background(), w)
+	if renderErr := choresEditForm(chore).Render(context.Background(), w); renderErr != nil {
+		http.Error(w, renderErr.Error(), http.StatusInternalServerError)
+	}
 }
 
 func EditPost(w http.ResponseWriter, r *http.Request) {

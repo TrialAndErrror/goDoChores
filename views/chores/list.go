@@ -17,7 +17,10 @@ func GetAllChores(userID uint) ([]models.Chore, error) {
 	}
 
 	var chores []models.Chore
-	db.Preload("Reminders").Where(models.Chore{UserID: userID}).Find(&chores)
+	result := db.Preload("Reminders").Where("user_id = ?", userID).Find(&chores)
+	if result.Error != nil {
+		return nil, result.Error
+	}
 
 	return chores, nil
 }
@@ -25,11 +28,13 @@ func GetAllChores(userID uint) ([]models.Chore, error) {
 func List(w http.ResponseWriter, r *http.Request) {
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
 	}
 	chores, err := GetAllChores(userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	component := choresList(chores)

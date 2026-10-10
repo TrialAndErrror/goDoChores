@@ -23,11 +23,13 @@ func CreateGet(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
 	}
 	chores, err := chores.GetAllChores(userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	component := remindersCreatePage(chores, models.GetIntervalNames())
 	renderErr := component.Render(context.Background(), w)
@@ -64,6 +66,9 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db.Create(&choreReminder)
+	if result := db.Create(&choreReminder); result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
 	http.Redirect(w, r, routes.URLFor("remindersDetail", choreReminder.ID), http.StatusFound)
 }

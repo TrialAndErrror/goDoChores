@@ -25,18 +25,23 @@ func GetChoreReminderList(userID uint) ([]ChoreReminderListEntry, error) {
 	}
 
 	var reminders []ChoreReminderListEntry
-	db.Model(&models.ChoreReminder{}).Select("chore_reminders.id as reminder_id, chore_reminders.interval,chore_reminders.date, chores.id as chore_id, chores.name").Joins("left join chores on chore_reminders.chore_id = chores.id").Where("chore_reminders.user_id = ?", userID).Scan(&reminders)
+	result := db.Model(&models.ChoreReminder{}).Select("chore_reminders.id as reminder_id, chore_reminders.interval,chore_reminders.date, chores.id as chore_id, chores.name").Joins("left join chores on chore_reminders.chore_id = chores.id").Where("chore_reminders.user_id = ?", userID).Scan(&reminders)
+	if result.Error != nil {
+		return nil, result.Error
+	}
 	return reminders, nil
 }
 
 func List(w http.ResponseWriter, r *http.Request) {
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
 	}
 	reminders, err := GetChoreReminderList(userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	component := remindersList(reminders)

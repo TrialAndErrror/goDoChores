@@ -27,18 +27,24 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 	parseError := r.ParseForm()
 	if parseError != nil {
-		http.Error(w, parseError.Error(), http.StatusInternalServerError)
+		http.Error(w, parseError.Error(), http.StatusBadRequest)
+		return
 	}
 
 	userID, err := auth.GetCurrentUserID(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
 	}
 	chore, choreCreateErr := models.ChoreFromForm(r.PostForm, userID)
 	if choreCreateErr != nil {
-		http.Error(w, choreCreateErr.Error(), http.StatusInternalServerError)
+		http.Error(w, choreCreateErr.Error(), http.StatusBadRequest)
+		return
 	}
 
-	db.Create(&chore)
+	if result := db.Create(&chore); result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
+	}
 	http.Redirect(w, r, routes.URLFor("choresDetail", chore.ID), http.StatusFound)
 }
