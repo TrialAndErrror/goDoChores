@@ -21,23 +21,9 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 )
 
-func runServer() {
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		log.Fatal("JWT_SECRET must be set (see .env.example)")
-	}
-	tokenAuth := auth.Init(jwtSecret)
-
-	if err := database.Open(); err != nil {
-		log.Fatal(err)
-	}
-
-	// Migrate the schema
-	migrateErr := database.DB.AutoMigrate(&models.Chore{}, &models.ChoreReminder{}, &models.Task{}, &models.User{})
-	if migrateErr != nil {
-		log.Fatalf("failed to migrate database: %v", migrateErr)
-	}
-
+// newRouter builds the full HTTP handler tree: public login routes plus the
+// JWT-protected app routes.
+func newRouter(tokenAuth *jwtauth.JWTAuth) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -59,6 +45,28 @@ func runServer() {
 
 		r.Post("/logout", auth.LogoutPost)
 	})
+
+	return r
+}
+
+func runServer() {
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET must be set (see .env.example)")
+	}
+	tokenAuth := auth.Init(jwtSecret)
+
+	if err := database.Open(); err != nil {
+		log.Fatal(err)
+	}
+
+	// Migrate the schema
+	migrateErr := database.DB.AutoMigrate(&models.Chore{}, &models.ChoreReminder{}, &models.Task{}, &models.User{})
+	if migrateErr != nil {
+		log.Fatalf("failed to migrate database: %v", migrateErr)
+	}
+
+	r := newRouter(tokenAuth)
 
 	// Get the port from the environment variable
 	port := os.Getenv("PORT")
