@@ -119,6 +119,10 @@ type User struct {
 	Email        string `gorm:"uniqueIndex;not null"`
 	PasswordHash string `gorm:"not null"`
 
+	// SessionVersion is stamped into every login token. Bumping it (on logout
+	// or a password change) invalidates all tokens issued before.
+	SessionVersion uint `gorm:"not null;default:0"`
+
 	Chores         []Chore
 	ChoreReminders []ChoreReminder
 	Tasks          []Task

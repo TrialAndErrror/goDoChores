@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
@@ -23,9 +24,11 @@ import (
 
 // newRouter builds the full HTTP handler tree: public login routes plus the
 // JWT-protected app routes.
-func newRouter(tokenAuth *jwtauth.JWTAuth) http.Handler {
+func newRouter(tokenAuth *jwtauth.JWTAuth, csrf *http.CrossOriginProtection) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+	// Reject cross-site form posts (CSRF) before any handler sees them.
+	r.Use(csrf.Handler)
 
 	// Login routes
 	r.Group(func(r chi.Router) {
@@ -37,7 +40,7 @@ func newRouter(tokenAuth *jwtauth.JWTAuth) http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(jwtauth.Verifier(tokenAuth))
 		r.Use(auth.Authenticator(tokenAuth))
-		r.Use(auth.UserExists)
+		r.Use(auth.ValidSession)
 
 		r.Mount("/", home.HomeRouter())
 		r.Mount("/chores", chores.ChoresRouter())
@@ -48,6 +51,23 @@ func newRouter(tokenAuth *jwtauth.JWTAuth) http.Handler {
 	})
 
 	return r
+}
+
+// newCrossOriginProtection builds the CSRF guard. Browsers are checked via
+// Sec-Fetch-Site, or by comparing the Origin header with the Host header. If a
+// reverse proxy rewrites Host, list the public origin(s), comma-separated,
+// in TRUSTED_ORIGINS (e.g. "https://chores.example.com").
+func newCrossOriginProtection(trustedOrigins string) (*http.CrossOriginProtection, error) {
+	csrf := http.NewCrossOriginProtection()
+	for _, origin := range strings.Split(trustedOrigins, ",") {
+		if origin = strings.TrimSpace(origin); origin == "" {
+			continue
+		}
+		if err := csrf.AddTrustedOrigin(origin); err != nil {
+			return nil, fmt.Errorf("TRUSTED_ORIGINS: %w", err)
+		}
+	}
+	return csrf, nil
 }
 
 func runServer() {
@@ -65,7 +85,11 @@ func runServer() {
 		log.Fatal(err)
 	}
 
-	r := newRouter(tokenAuth)
+	csrf, err := newCrossOriginProtection(os.Getenv("TRUSTED_ORIGINS"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	r := newRouter(tokenAuth, csrf)
 
 	// Get the port from the environment variable
 	port := os.Getenv("PORT")

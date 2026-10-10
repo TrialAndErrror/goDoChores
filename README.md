@@ -26,7 +26,7 @@ Basic deployment:
 - `templ generate` to compile the templates
 - `go build .` to build a binary
 - Copy the binary wherever you want it
-- Copy the .env.example file to .env and fill in `JWT_SECRET` (required), `PORT`, and optionally `DB_PATH` (SQLite file, default `test.db`) and `COOKIE_SECURE=true` if you serve over HTTPS
+- Copy the .env.example file to .env and fill in `JWT_SECRET` (required), `PORT`, and optionally `DB_PATH` (SQLite file, default `test.db`) and `COOKIE_SECURE=true` if you serve over HTTPS, and `TRUSTED_ORIGINS` if a reverse proxy changes the `Host` header (see Security)
 - `./goDoChores create-user` to create the user (or whatever you called the binary, if you specified a name)
 - `./goDoChores` to run the server
 
@@ -39,3 +39,8 @@ There is no sign-up page, so users are managed from the command line. Every comm
 - `./goDoChores delete-user <username>` permanently deletes a user **and all of their chores, reminders and tasks**. You have to type the username to confirm, or pass `-y/--yes` to skip that. Their logins stop working immediately, and the username and email can be used again.
 
 See `./.dev_scripts` for shell scripts that I use for building binaries and deploying to my server
+
+## Security notes
+
+- **Logging out** ends all of that user's sessions on every device, not just the browser you clicked it in. Changing someone's password with `create-user` does the same. Logins last 24 hours otherwise.
+- **Cross-site request forgery** is blocked for every non-GET request using Go's built-in `http.CrossOriginProtection`, which checks the browser's `Sec-Fetch-Site` header (or `Origin` against `Host`). Requests with neither header, such as `curl`, are allowed. If you run behind a reverse proxy that rewrites the `Host` header and your forms start returning `403`, set `TRUSTED_ORIGINS` to your public origin, e.g. `TRUSTED_ORIGINS=https://chores.example.com` (comma-separate several).

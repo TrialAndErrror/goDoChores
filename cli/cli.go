@@ -122,7 +122,7 @@ Passing --password on the command line can leave it in your shell history.`,
 			if created {
 				fmt.Fprintf(out, "User created: %s\n", strings.TrimSpace(username))
 			} else {
-				fmt.Fprintf(out, "User %s already existed; email and password updated\n", strings.TrimSpace(username))
+				fmt.Fprintf(out, "User %s already existed; email and password updated, and their existing logins were signed out\n", strings.TrimSpace(username))
 			}
 			return nil
 		},

@@ -56,6 +56,8 @@ func SaveUser(db *gorm.DB, username, email, password string) (created bool, err 
 	switch {
 	case findErr == nil:
 		user.Email = email
+		// A new password must sign the user out everywhere.
+		user.SessionVersion++
 	case errors.Is(findErr, gorm.ErrRecordNotFound):
 		created = true
 		user = models.User{Username: username, Email: email}

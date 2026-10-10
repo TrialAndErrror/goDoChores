@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"goDoChores/auth"
+	"goDoChores/cli"
 	"goDoChores/database"
 	"goDoChores/models"
 
@@ -43,6 +44,10 @@ func newTestApp(t *testing.T) (*testApp, seed) {
 		t.Fatal(err)
 	}
 	tokenAuth := auth.Init(testSecret)
+	csrf, err := newCrossOriginProtection("")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	db := database.DB
 	users := map[string]*models.User{
@@ -71,11 +76,17 @@ func newTestApp(t *testing.T) (*testApp, seed) {
 	s.aliceChore, s.aliceReminder, s.aliceTask = mk(users["alice"])
 	s.bobChore, s.bobReminder, s.bobTask = mk(users["bob"])
 
-	return &testApp{t: t, h: newRouter(tokenAuth), cookies: map[string]*http.Cookie{}}, s
+	return &testApp{t: t, h: newRouter(tokenAuth, csrf), cookies: map[string]*http.Cookie{}}, s
 }
 
 // do sends a request as the given user ("" = anonymous).
 func (a *testApp) do(user, method, path string, form url.Values) *httptest.ResponseRecorder {
+	a.t.Helper()
+	return a.doWithHeaders(user, method, path, form, nil)
+}
+
+// doWithHeaders is do plus extra request headers (e.g. Sec-Fetch-Site, Origin).
+func (a *testApp) doWithHeaders(user, method, path string, form url.Values, headers map[string]string) *httptest.ResponseRecorder {
 	a.t.Helper()
 	var req *http.Request
 	if form != nil {
@@ -83,6 +94,9 @@ func (a *testApp) do(user, method, path string, form url.Values) *httptest.Respo
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	} else {
 		req = httptest.NewRequest(method, path, nil)
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 	if user != "" {
 		req.AddCookie(a.login(user))
@@ -723,5 +737,218 @@ func TestHomeOffsetEdgeCases(t *testing.T) {
 	expectStatus(t, rec, http.StatusFound, "anonymous batch")
 	if rec.Header().Get("Location") != "/login" {
 		t.Errorf("anonymous batch redirected to %q", rec.Header().Get("Location"))
+	}
+}
+
+// cookieFor logs in again and returns a brand-new token (the cached one from
+// login() is left alone).
+func (a *testApp) newSession(user string) *http.Cookie {
+	a.t.Helper()
+	rec := a.postLogin(user, user+"-pw")
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == "jwt" && c.Value != "" {
+			return c
+		}
+	}
+	a.t.Fatalf("login as %s failed: status %d", user, rec.Code)
+	return nil
+}
+
+func (a *testApp) withCookie(c *http.Cookie, method, path string, form url.Values) *httptest.ResponseRecorder {
+	var req *http.Request
+	if form != nil {
+		req = httptest.NewRequest(method, path, strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	} else {
+		req = httptest.NewRequest(method, path, nil)
+	}
+	req.AddCookie(c)
+	rec := httptest.NewRecorder()
+	a.h.ServeHTTP(rec, req)
+	return rec
+}
+
+func TestLogoutRevokesTheToken(t *testing.T) {
+	a, s := newTestApp(t)
+
+	laptop := a.newSession("alice")
+	phone := a.newSession("alice")
+	expectStatus(t, a.withCookie(laptop, "GET", "/chores/", nil), http.StatusOK, "laptop before logout")
+	expectStatus(t, a.withCookie(phone, "GET", "/chores/", nil), http.StatusOK, "phone before logout")
+
+	rec := a.withCookie(laptop, "POST", "/logout", nil)
+	expectStatus(t, rec, http.StatusSeeOther, "logout")
+
+	// The copied token is dead, so it cannot read or change anything.
+	rec = a.withCookie(laptop, "GET", "/chores/", nil)
+	expectStatus(t, rec, http.StatusFound, "replayed token after logout")
+	if rec.Header().Get("Location") != "/login" {
+		t.Errorf("replayed token redirected to %q", rec.Header().Get("Location"))
+	}
+	rec = a.withCookie(laptop, "POST", fmt.Sprintf("/chores/%d/", s.aliceChore), url.Values{"action": {"delete"}})
+	expectStatus(t, rec, http.StatusFound, "replayed token trying to delete")
+	if count(t, &models.Chore{}, "id = ?", s.aliceChore) != 1 {
+		t.Error("a logged-out token deleted data")
+	}
+
+	// Logging out ends every session of that user, not just this one.
+	expectStatus(t, a.withCookie(phone, "GET", "/chores/", nil), http.StatusFound, "other device after logout")
+
+	// Other users are unaffected, and alice can sign in again.
+	expectStatus(t, a.do("bob", "GET", "/chores/", nil), http.StatusOK, "bob after alice's logout")
+	fresh := a.newSession("alice")
+	expectStatus(t, a.withCookie(fresh, "GET", "/chores/", nil), http.StatusOK, "alice after signing in again")
+}
+
+func TestPasswordChangeRevokesSessions(t *testing.T) {
+	a, _ := newTestApp(t)
+
+	old := a.newSession("alice")
+	expectStatus(t, a.withCookie(old, "GET", "/chores/", nil), http.StatusOK, "before password change")
+
+	// What `create-user` does for an existing username.
+	if _, err := cli.SaveUser(database.DB, "alice", "alice@example.com", "brand-new-pw"); err != nil {
+		t.Fatal(err)
+	}
+	expectStatus(t, a.withCookie(old, "GET", "/chores/", nil), http.StatusFound, "old token after password change")
+
+	expectStatus(t, a.postLogin("alice", "alice-pw"), http.StatusUnauthorized, "old password")
+	rec := a.postLogin("alice", "brand-new-pw")
+	expectStatus(t, rec, http.StatusSeeOther, "new password")
+	expectStatus(t, a.do("bob", "GET", "/chores/", nil), http.StatusOK, "bob unaffected")
+}
+
+func TestTokensWithoutACurrentSessionVersionAreRejected(t *testing.T) {
+	a, _ := newTestApp(t)
+	signer := jwtauth.New("HS256", []byte(testSecret), nil)
+	exp := time.Now().Add(time.Hour).Unix()
+
+	cases := map[string]map[string]interface{}{
+		"no sv claim (issued before session versions)": {"user_id": 1, "exp": exp},
+		"wrong sv claim":       {"user_id": 1, "sv": 99, "exp": exp},
+		"sv of the wrong type": {"user_id": 1, "sv": "0", "exp": exp},
+	}
+	for name, claims := range cases {
+		_, tok, err := signer.Encode(claims)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rec := a.withCookie(&http.Cookie{Name: "jwt", Value: tok}, "GET", "/chores/", nil)
+		expectStatus(t, rec, http.StatusFound, name)
+		if rec.Header().Get("Location") != "/login" {
+			t.Errorf("%s: redirected to %q", name, rec.Header().Get("Location"))
+		}
+	}
+
+	// Sanity: the same claims with the right version are accepted.
+	var alice models.User
+	database.DB.Where("username = ?", "alice").First(&alice)
+	_, tok, _ := signer.Encode(map[string]interface{}{"user_id": alice.ID, "sv": alice.SessionVersion, "exp": exp})
+	expectStatus(t, a.withCookie(&http.Cookie{Name: "jwt", Value: tok}, "GET", "/chores/", nil), http.StatusOK, "correct version")
+}
+
+func TestCrossSiteWritesAreRejected(t *testing.T) {
+	a, s := newTestApp(t)
+	form := url.Values{"name": {"csrf chore"}, "description": {"d"}, "time": {"5"}}
+	chores := func() int64 { return count(t, &models.Chore{}, "1 = 1") }
+	before := chores()
+
+	blocked := []map[string]string{
+		{"Sec-Fetch-Site": "cross-site"},
+		{"Sec-Fetch-Site": "same-site"}, // a sibling subdomain is not our origin
+		{"Origin": "https://evil.example"},
+		{"Origin": "null"},
+	}
+	for _, h := range blocked {
+		rec := a.doWithHeaders("alice", "POST", "/chores/new", form, h)
+		expectStatus(t, rec, http.StatusForbidden, fmt.Sprintf("POST with %v", h))
+	}
+	if chores() != before {
+		t.Error("a cross-site POST created a chore")
+	}
+
+	// Every kind of state change is covered, not just creates.
+	for _, c := range []struct {
+		path string
+		form url.Values
+	}{
+		{fmt.Sprintf("/chores/%d/", s.aliceChore), url.Values{"action": {"delete"}}},
+		{fmt.Sprintf("/chores/%d/edit", s.aliceChore), url.Values{"name": {"x"}, "time": {"1"}}},
+		{fmt.Sprintf("/tasks/%d/", s.aliceTask), url.Values{"action": {"delete"}}},
+		{"/", url.Values{"reminderID": {fmt.Sprint(s.aliceReminder)}, "action": {"delete"}}},
+	} {
+		rec := a.doWithHeaders("alice", "POST", c.path, c.form, map[string]string{"Sec-Fetch-Site": "cross-site"})
+		expectStatus(t, rec, http.StatusForbidden, "cross-site POST "+c.path)
+	}
+	if count(t, &models.Chore{}, "id = ?", s.aliceChore) != 1 || count(t, &models.Task{}, "id = ?", s.aliceTask) != 1 || count(t, &models.ChoreReminder{}, "id = ?", s.aliceReminder) != 1 {
+		t.Error("a cross-site POST changed data")
+	}
+
+	// Logging out via another site would be a nuisance; it is blocked too, and
+	// the session survives.
+	rec := a.doWithHeaders("alice", "POST", "/logout", nil, map[string]string{"Sec-Fetch-Site": "cross-site"})
+	expectStatus(t, rec, http.StatusForbidden, "cross-site logout")
+	expectStatus(t, a.do("alice", "GET", "/chores/", nil), http.StatusOK, "session after blocked logout")
+
+	// So is a forged login (it would sign the victim in as the attacker).
+	rec = a.doWithHeaders("", "POST", "/login", url.Values{"username": {"alice"}, "password": {"alice-pw"}}, map[string]string{"Sec-Fetch-Site": "cross-site"})
+	expectStatus(t, rec, http.StatusForbidden, "cross-site login")
+}
+
+func TestSameOriginAndNonBrowserWritesAreAllowed(t *testing.T) {
+	a, _ := newTestApp(t)
+	form := func(n string) url.Values { return url.Values{"name": {n}, "description": {"d"}, "time": {"5"}} }
+
+	allowed := []map[string]string{
+		nil, // curl, scripts, the test client: no browser headers
+		{"Sec-Fetch-Site": "same-origin"},
+		{"Sec-Fetch-Site": "none"},       // typed into the address bar
+		{"Origin": "http://example.com"}, // httptest's Host is example.com
+		{"Sec-Fetch-Site": "same-origin", "Origin": "http://example.com"},
+	}
+	for i, h := range allowed {
+		rec := a.doWithHeaders("alice", "POST", "/chores/new", form(fmt.Sprintf("ok %d", i)), h)
+		expectStatus(t, rec, http.StatusFound, fmt.Sprintf("POST with %v", h))
+	}
+
+	// Reading is never blocked, even when requested cross-site.
+	rec := a.doWithHeaders("alice", "GET", "/chores/", nil, map[string]string{"Sec-Fetch-Site": "cross-site"})
+	expectStatus(t, rec, http.StatusOK, "cross-site GET")
+
+	// Logging in from the real login page works.
+	rec = a.doWithHeaders("", "POST", "/login", url.Values{"username": {"alice"}, "password": {"alice-pw"}}, map[string]string{"Sec-Fetch-Site": "same-origin"})
+	expectStatus(t, rec, http.StatusSeeOther, "same-origin login")
+}
+
+func TestTrustedOrigins(t *testing.T) {
+	csrf, err := newCrossOriginProtection(" https://chores.example.com , http://192.168.1.5:3000,")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNoContent) })
+	h := csrf.Handler(ok)
+
+	post := func(origin string) int {
+		req := httptest.NewRequest("POST", "/x", nil) // Host: example.com, as behind a proxy that rewrote it
+		req.Header.Set("Origin", origin)
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec.Code
+	}
+	if c := post("https://chores.example.com"); c != http.StatusNoContent {
+		t.Errorf("trusted origin: got %d", c)
+	}
+	if c := post("http://192.168.1.5:3000"); c != http.StatusNoContent {
+		t.Errorf("second trusted origin: got %d", c)
+	}
+	if c := post("https://evil.example"); c != http.StatusForbidden {
+		t.Errorf("untrusted origin: got %d", c)
+	}
+
+	if _, err := newCrossOriginProtection("https://ok.example, not-an-origin"); err == nil {
+		t.Error("an invalid origin should be rejected at startup")
+	}
+	if _, err := newCrossOriginProtection(""); err != nil {
+		t.Errorf("no trusted origins should be fine: %v", err)
 	}
 }

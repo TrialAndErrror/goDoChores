@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 	"goDoChores/database"
 	"goDoChores/models"
+	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"time"
@@ -31,6 +32,12 @@ func secureCookies() bool {
 	return os.Getenv("COOKIE_SECURE") == "true"
 }
 
+// RevokeSessions invalidates every login token issued to the user so far.
+func RevokeSessions(db *gorm.DB, userID uint) error {
+	return db.Model(&models.User{}).Where("id = ?", userID).
+		UpdateColumn("session_version", gorm.Expr("session_version + 1")).Error
+}
+
 func LoginUser(username string, password string) (string, error) {
 	db := database.DB
 	var user models.User
@@ -49,6 +56,7 @@ func LoginUser(username string, password string) (string, error) {
 
 	_, tokenString, err := tokenAuth.Encode(map[string]interface{}{
 		"user_id": user.ID,
+		"sv":      user.SessionVersion,
 		"exp":     time.Now().Add(sessionLifetime).Unix(),
 	})
 	if err != nil {
@@ -98,7 +106,21 @@ func LoginPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+// LogoutPost ends the user's sessions. Clearing the cookie is not enough on its
+// own, since a copied token would keep working, so it also bumps the user's
+// session version, which makes every token issued so far invalid (on all of
+// their devices).
 func LogoutPost(w http.ResponseWriter, r *http.Request) {
+	userID, err := GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	if err := RevokeSessions(database.DB, userID); err != nil {
+		http.Error(w, "Failed to log out", http.StatusInternalServerError)
+		return
+	}
+
 	// Create an expired cookie with the same name
 	cookie := http.Cookie{
 		Name:     "jwt", // Cookie name must match the one used in login
