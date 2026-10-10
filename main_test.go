@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -577,5 +579,149 @@ func TestOrphanedRemindersAreHidden(t *testing.T) {
 		if strings.Contains(a.do("alice", "GET", p, nil).Body.String(), "alice chore") {
 			t.Errorf("GET %s shows an orphaned reminder", p)
 		}
+	}
+}
+
+// cardNames returns the chore/task names rendered in a home page or batch, in
+// order. Seeded names are "t<NN>" for tasks and "c<NN>" for chores.
+func cardNames(body string) []string {
+	var names []string
+	for _, m := range regexp.MustCompile(`>\s*([tc]\d{2}) \(`).FindAllStringSubmatch(body, -1) {
+		names = append(names, m[1])
+	}
+	return names
+}
+
+func TestHomeInfiniteScroll(t *testing.T) {
+	a, s := newTestApp(t)
+	var alice models.User
+	database.DB.Where("username = ?", "alice").First(&alice)
+
+	// Alice's seeded rows would add noise; start from a clean slate for her.
+	database.DB.Unscoped().Where("user_id = ?", alice.ID).Delete(&models.ChoreReminder{})
+	database.DB.Unscoped().Where("user_id = ?", alice.ID).Delete(&models.Task{})
+	_ = s
+
+	// 14 tasks and 11 chore reminders (25 total), interleaved by date. Three
+	// items share a date to exercise the tie-break.
+	base := time.Date(2030, 1, 1, 0, 0, 0, 0, time.UTC)
+	var want []string
+	for i := 0; i < 25; i++ {
+		date := base.AddDate(0, 0, i/2*1) // pairs share a date
+		if i%2 == 0 && i < 14 {
+			name := fmt.Sprintf("t%02d", i)
+			database.DB.Create(&models.Task{Name: name, Date: date, UserID: alice.ID})
+			want = append(want, name)
+		} else {
+			name := fmt.Sprintf("c%02d", i)
+			c := models.Chore{Name: name, Time: 1, UserID: alice.ID}
+			database.DB.Create(&c)
+			database.DB.Create(&models.ChoreReminder{ChoreID: uint64(c.ID), Date: date, Interval: "Daily", UserID: alice.ID})
+			want = append(want, name)
+		}
+	}
+	// Bob's rows must never leak in (his seeded task is "bob task", not tNN).
+
+	first := a.do("alice", "GET", "/", nil)
+	expectStatus(t, first, http.StatusOK, "first page")
+	body := first.Body.String()
+	got := cardNames(body)
+	if len(got) != 12 {
+		t.Fatalf("first page has %d cards, want 12", len(got))
+	}
+	if !strings.Contains(body, `id="loadMoreSentinel"`) || !strings.Contains(body, `data-next-offset="12"`) {
+		t.Error("first page should end with a sentinel pointing at offset 12")
+	}
+	if !strings.Contains(body, "<html") {
+		t.Error("first page should be a full document")
+	}
+
+	// Follow the sentinel until it runs out, as the browser script does.
+	var batches []int
+	offset := 12
+	for steps := 0; ; steps++ {
+		if steps > 10 {
+			t.Fatal("too many batches")
+		}
+		rec := a.do("alice", "GET", fmt.Sprintf("/?offset=%d", offset), nil)
+		expectStatus(t, rec, http.StatusOK, "batch")
+		b := rec.Body.String()
+		if strings.Contains(b, "<html") || strings.Contains(b, "<body") {
+			t.Error("a later batch should be a fragment, not a full page")
+		}
+		names := cardNames(b)
+		batches = append(batches, len(names))
+		got = append(got, names...)
+
+		m := regexp.MustCompile(`data-next-offset="(\d+)"`).FindStringSubmatch(b)
+		if m == nil {
+			break
+		}
+		offset, _ = strconv.Atoi(m[1])
+	}
+	if fmt.Sprint(batches) != "[6 6 1]" {
+		t.Errorf("batch sizes after the first page: %v, want [6 6 1]", batches)
+	}
+
+	// Every item exactly once, in date order, tasks past the old limit of 6 included.
+	if len(got) != len(want) {
+		t.Fatalf("saw %d items, want %d: %v", len(got), len(want), got)
+	}
+	seen := map[string]bool{}
+	for _, n := range got {
+		if seen[n] {
+			t.Errorf("%s appeared twice", n)
+		}
+		seen[n] = true
+	}
+	for _, n := range want {
+		if !seen[n] {
+			t.Errorf("%s never appeared", n)
+		}
+	}
+	for i := 1; i < len(got); i++ {
+		// Names were created in date order, so the index in want is the date rank.
+		if indexOf(want, got[i-1])/2 > indexOf(want, got[i])/2 {
+			t.Errorf("out of date order at %d: %s before %s", i, got[i-1], got[i])
+		}
+	}
+	if !seen["t12"] {
+		t.Error("a task beyond the old 6-task limit is missing")
+	}
+}
+
+func indexOf(xs []string, x string) int {
+	for i, v := range xs {
+		if v == x {
+			return i
+		}
+	}
+	return -1
+}
+
+func TestHomeOffsetEdgeCases(t *testing.T) {
+	a, _ := newTestApp(t)
+
+	for _, bad := range []string{"abc", "-1", "1.5"} {
+		expectStatus(t, a.do("alice", "GET", "/?offset="+bad, nil), http.StatusBadRequest, "offset="+bad)
+	}
+
+	// Past the end: an empty fragment with no sentinel, not an error.
+	rec := a.do("alice", "GET", "/?offset=500", nil)
+	expectStatus(t, rec, http.StatusOK, "offset past the end")
+	if strings.Contains(rec.Body.String(), `id="loadMoreSentinel"`) || len(cardNames(rec.Body.String())) != 0 {
+		t.Error("offset past the end should render nothing")
+	}
+
+	// A small list has no sentinel on the first page.
+	if strings.Contains(a.do("alice", "GET", "/", nil).Body.String(), `id="loadMoreSentinel"`) {
+		t.Error("two items should not show a load-more sentinel")
+	}
+
+	// Batches require login like the rest of the page.
+	rec = a.do("", "GET", "/?offset=12", nil)
+	expectStatus(t, rec, http.StatusFound, "anonymous batch")
+	if rec.Header().Get("Location") != "/login" {
+		t.Errorf("anonymous batch redirected to %q", rec.Header().Get("Location"))
 	}
 }
