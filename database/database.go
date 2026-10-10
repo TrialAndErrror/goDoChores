@@ -45,6 +45,19 @@ func Open() error {
 	return nil
 }
 
+// Close releases the database connection. Call it once, after the server has
+// stopped handling requests.
+func Close() error {
+	if DB == nil {
+		return nil
+	}
+	sqlDB, err := DB.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
+}
+
 // Migrate creates or updates every table the app uses. Both the server and the
 // CLI call it after Open so a fresh database always has its schema.
 func Migrate() error {

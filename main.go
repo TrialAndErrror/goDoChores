@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"goDoChores/auth"
 	"goDoChores/cli"
@@ -10,9 +11,13 @@ import (
 	"goDoChores/views/reminders"
 	"goDoChores/views/tasks"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
@@ -70,6 +75,44 @@ func newCrossOriginProtection(trustedOrigins string) (*http.CrossOriginProtectio
 	return csrf, nil
 }
 
+// shutdownGrace is how long in-flight requests get to finish on shutdown.
+const shutdownGrace = 10 * time.Second
+
+// newServer wraps the handler in an http.Server with timeouts, so a slow or
+// stalled client cannot hold a connection (and its goroutine) open forever.
+func newServer(handler http.Handler) *http.Server {
+	return &http.Server{
+		Handler:           handler,
+		ReadHeaderTimeout: 10 * time.Second, // time to send the request headers
+		ReadTimeout:       30 * time.Second, // time to send the whole request
+		WriteTimeout:      30 * time.Second, // time to produce the response
+		IdleTimeout:       2 * time.Minute,  // keep-alive connections waiting for a next request
+	}
+}
+
+// serve runs srv on ln until ctx is cancelled, then shuts down gracefully:
+// it stops accepting connections and waits up to grace for running requests to
+// finish before forcing the rest closed. It returns nil after a clean shutdown.
+func serve(ctx context.Context, srv *http.Server, ln net.Listener, grace time.Duration) error {
+	errCh := make(chan error, 1)
+	go func() { errCh <- srv.Serve(ln) }()
+
+	select {
+	case err := <-errCh:
+		return err // the server failed on its own, before any shutdown
+	case <-ctx.Done():
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), grace)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		_ = srv.Close() // out of time: drop whatever is still running
+		return fmt.Errorf("graceful shutdown: %w", err)
+	}
+	<-errCh // Serve returns http.ErrServerClosed once Shutdown has begun
+	return nil
+}
+
 func runServer() {
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
@@ -96,8 +139,24 @@ func runServer() {
 	if port == "" {
 		port = "3000"
 	}
+	ln, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Stop cleanly on Ctrl-C or SIGTERM (what `kill` sends), letting requests
+	// that are already running finish.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	fmt.Println("Serving on port " + port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	if err := serve(ctx, newServer(r), ln, shutdownGrace); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Server stopped")
+	if err := database.Close(); err != nil {
+		log.Printf("closing database: %v", err)
+	}
 }
 
 func main() {
