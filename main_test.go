@@ -455,3 +455,71 @@ func TestTokensExpireAndDieWithTheirUser(t *testing.T) {
 	// Other users are unaffected.
 	expectStatus(t, a.do("bob", "GET", "/chores/", nil), http.StatusOK, "other user")
 }
+
+func TestEditsValidateInput(t *testing.T) {
+	a, s := newTestApp(t)
+
+	chore := fmt.Sprintf("/chores/%d/edit", s.aliceChore)
+	reminder := fmt.Sprintf("/reminders/%d/edit", s.aliceReminder)
+	task := fmt.Sprintf("/tasks/%d/edit", s.aliceTask)
+	ownChore := fmt.Sprint(s.aliceChore)
+
+	bad := []struct {
+		what, path string
+		form       url.Values
+	}{
+		{"chore empty name", chore, url.Values{"name": {""}, "time": {"5"}}},
+		{"chore blank name", chore, url.Values{"name": {"   "}, "time": {"5"}}},
+		{"chore negative time", chore, url.Values{"name": {"x"}, "time": {"-5"}}},
+		{"chore non-numeric time", chore, url.Values{"name": {"x"}, "time": {"abc"}}},
+		{"reminder bogus interval", reminder, url.Values{"choreID": {ownChore}, "date": {"2026-12-01"}, "interval": {"Hourly"}}},
+		{"reminder bad date", reminder, url.Values{"choreID": {ownChore}, "date": {"garbage"}, "interval": {"Daily"}}},
+		{"reminder missing chore", reminder, url.Values{"date": {"2026-12-01"}, "interval": {"Daily"}}},
+		{"task empty name", task, url.Values{"name": {""}, "date": {"2026-12-01"}}},
+		{"task bad date", task, url.Values{"name": {"x"}, "date": {"garbage"}}},
+	}
+	for _, c := range bad {
+		expectStatus(t, a.do("alice", "POST", c.path, c.form), http.StatusBadRequest, c.what)
+	}
+
+	// None of the rejected edits changed anything.
+	var gc models.Chore
+	database.DB.First(&gc, s.aliceChore)
+	if gc.Name != "alice chore" || gc.Time != 10 {
+		t.Errorf("chore changed: %+v", gc)
+	}
+	var gr models.ChoreReminder
+	database.DB.First(&gr, s.aliceReminder)
+	if gr.Interval != "Weekly" || !gr.Date.Equal(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)) {
+		t.Errorf("reminder changed: %+v", gr)
+	}
+	var gt models.Task
+	database.DB.First(&gt, s.aliceTask)
+	if gt.Name != "alice task" {
+		t.Errorf("task changed: %+v", gt)
+	}
+
+	// Creating with an empty name is rejected too.
+	n := count(t, &models.Chore{}, "1 = 1")
+	expectStatus(t, a.do("alice", "POST", "/chores/new", url.Values{"name": {""}, "time": {"5"}}), http.StatusBadRequest, "create chore empty name")
+	expectStatus(t, a.do("alice", "POST", "/tasks/new", url.Values{"name": {""}, "date": {"2026-12-01"}}), http.StatusBadRequest, "create task empty name")
+	if count(t, &models.Chore{}, "1 = 1") != n {
+		t.Error("chore with empty name was created")
+	}
+
+	// Valid edits still work and redirect to the detail page.
+	rec := a.do("alice", "POST", reminder, url.Values{"choreID": {ownChore}, "date": {"2026-12-01"}, "interval": {"Monthly"}})
+	expectStatus(t, rec, http.StatusSeeOther, "valid reminder edit")
+	if loc := rec.Header().Get("Location"); loc != fmt.Sprintf("/reminders/%d/", s.aliceReminder) {
+		t.Errorf("reminder edit redirected to %q", loc)
+	}
+	database.DB.First(&gr, s.aliceReminder)
+	if gr.Interval != "Monthly" || !gr.Date.Equal(time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)) {
+		t.Errorf("reminder not updated: %+v", gr)
+	}
+	rec = a.do("alice", "POST", chore, url.Values{"name": {"New name"}, "description": {"d"}, "time": {"0"}})
+	expectStatus(t, rec, http.StatusSeeOther, "valid chore edit")
+	if loc := rec.Header().Get("Location"); loc != fmt.Sprintf("/chores/%d/", s.aliceChore) {
+		t.Errorf("chore edit redirected to %q", loc)
+	}
+}

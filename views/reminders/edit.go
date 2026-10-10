@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-	"time"
 
 	"goDoChores/auth"
 	"goDoChores/database"
 	"goDoChores/models"
+	"goDoChores/routes"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -73,28 +73,19 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update reminder fields
-	choreIDStr := r.FormValue("choreID")
-	if choreIDStr != "" {
-		choreID, err := strconv.ParseUint(choreIDStr, 10, 64)
-		if err != nil {
-			http.Error(w, "Invalid chore ID", http.StatusBadRequest)
-			return
-		}
-		if !userOwnsChore(db, userID, choreID) {
-			http.Error(w, "Chore not found", http.StatusBadRequest)
-			return
-		}
-		reminder.ChoreID = choreID
+	// Validate the submitted fields the same way create does.
+	updated, err := models.ChoreReminderFromForm(r.PostForm, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
-
-	dateStr := r.FormValue("date")
-	dateFormatString := "2006-01-02"
-	if date, err := time.Parse(dateFormatString, dateStr); err == nil {
-		reminder.Date = date
+	if !userOwnsChore(db, userID, updated.ChoreID) {
+		http.Error(w, "Chore not found", http.StatusBadRequest)
+		return
 	}
-
-	reminder.Interval = r.FormValue("interval")
+	reminder.ChoreID = updated.ChoreID
+	reminder.Date = updated.Date
+	reminder.Interval = updated.Interval
 
 	// Save the updated reminder
 	if err := db.Save(&reminder).Error; err != nil {
@@ -103,5 +94,5 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Redirect to the reminder detail page
-	http.Redirect(w, r, "/reminders/"+reminderID+"/", http.StatusSeeOther)
+	http.Redirect(w, r, routes.URLFor("remindersDetail", reminder.ID), http.StatusSeeOther)
 }
