@@ -250,7 +250,7 @@ Everyone will have to log in again once, because the container uses a new `JWT_S
 
 ## Reverse proxy and HTTPS
 
-The container publishes only `127.0.0.1:3000` **on the server**. Put your existing reverse proxy in front of it and terminate HTTPS there. The app does not look at `X-Forwarded-*` headers, so set `COOKIE_SECURE=true` yourself.
+The container publishes only `127.0.0.1:3000` **on the server** by default. If your proxy already forwards to a different port, set `HOST_PORT=<that port>` in `.env.production` instead of changing the proxy (for example Caddy's `reverse_proxy localhost:3001` needs `HOST_PORT=3001`), then run `up.sh --prod`. `up.sh` prints the port it actually published. Put your existing reverse proxy in front of it and terminate HTTPS there. The app does not look at `X-Forwarded-*` headers, so set `COOKIE_SECURE=true` yourself.
 
 Example configurations (adapt to your own setup):
 
@@ -317,7 +317,7 @@ The image has no shell by design, so `docker exec ... sh` won't work. Everything
 
 ## Known limits
 
-- **The `--prod` path has not been tested against a real server.** Everything was exercised locally against Docker (build, start, health, users, down/up, rebuild, nuke, backup, restore). The server path uses the same code with `DOCKER_HOST=ssh://...` and an `ssh` image transfer. Run `doctor.sh --prod` first and try `up.sh --prod` before relying on it.
+- **Proven so far:** a first real deployment (`doctor.sh --prod`, `up.sh --prod`, restoring the old database with `restore.sh --prod`). **Not yet exercised on the server:** `deploy.sh`, `rebuild.sh --prod`, `nuke.sh --prod`, rolling back, and the app coming back after a server reboot. Try those once at a quiet moment before you depend on them.
 - **Single instance.** SQLite means one container; don't run two against the same volume.
 - **No rollback command** and no scheduled backups. To get them regularly, run `backup.sh --prod` from cron on your machine (it needs your SSH key available without a prompt), e.g. `0 3 * * * cd /path/to/goDoChores && .dev_scripts/backup.sh --prod`.
 - **Downtime is a few seconds** while the container is replaced during deploys.

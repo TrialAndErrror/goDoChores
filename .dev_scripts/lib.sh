@@ -153,13 +153,26 @@ wait_healthy() {
     die "the app did not become healthy; see the log above"
 }
 
+# published_address: the host address:port Docker actually published for the app
+# (e.g. 127.0.0.1:3001). Asking Docker means this is right whatever HOST_PORT and
+# BIND_ADDR are set to, without reading the settings file.
+published_address() {
+    dc port app 3000 2>/dev/null | head -n 1 || true
+}
+
 # summary: where the app is and how to reach it.
 summary() {
     dc ps
+    local addr
+    addr=$(published_address)
+    if [[ -z $addr ]]; then
+        warn "could not work out which port the app is published on (see the PORTS column above)"
+        return 0
+    fi
     if [[ $TARGET == prod ]]; then
-        say "Running on $DEPLOY_HOST, listening on ${BIND_ADDR:-127.0.0.1}:${HOST_PORT:-3000} there (point your reverse proxy at it)"
+        say "Running on $DEPLOY_HOST, listening on $addr there (point your reverse proxy at it)"
     else
-        say "Open http://127.0.0.1:${HOST_PORT:-3000}/login"
+        say "Open http://${addr/0.0.0.0/127.0.0.1}/login"
         say "Create a user:  .dev_scripts/user.sh create"
     fi
 }
