@@ -70,7 +70,7 @@ Run everything from anywhere; the scripts find the project themselves. Add `--pr
 | `rebuild.sh` | Rebuild **from scratch**: no layer cache, fresh base images, new container. | kept |
 | `down.sh` | Stop and remove the container. The volume and image stay, so `up.sh` brings it all back. | kept |
 | `nuke.sh [--yes] [--no-backup]` | Delete **everything**: container, image and the data volume. Saves a backup first (if the app is running) and asks you to type `local` (or the server's name) to confirm. | **deleted** |
-| `deploy.sh [--no-backup]` | Production only: back up the live database, build, ship, restart. | kept |
+| `deploy.sh [--yes] [--no-backup]` | Production only: ask to confirm (skip with `--yes`), back up the live database, build, ship, restart. | kept |
 | `user.sh create\|list\|delete ...` | Manage users in the running app. `create` takes `-u`, `-e`, `-p` or prompts; `delete USERNAME` asks you to retype the name (`--yes` skips). | changes users |
 | `backup.sh` | Save a consistent snapshot of the live database to `backups/`. Safe while the app is serving. | kept |
 | `restore.sh [--yes] FILE` | Replace the database with a backup. Stops the app briefly. The replaced database is kept inside the volume. | **replaced** |

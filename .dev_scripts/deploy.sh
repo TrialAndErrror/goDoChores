@@ -2,17 +2,25 @@
 # Ship the current code to the production server: back up the live database,
 # build the image here, send it over SSH, and restart. Same as `up.sh --prod`
 # with a backup first.
-#   deploy.sh [--no-backup]
+#   deploy.sh [--yes] [--no-backup]
 source "$(dirname "$0")/lib.sh"
-backup=true
+backup=true; yes=false
 for arg in "$@"; do
     case $arg in
+        --yes|-y) yes=true ;;
         --no-backup) backup=false ;;
         *) die "unknown option: $arg" ;;
     esac
 done
 parse_target --prod
-need docker; require_env
+need docker
+
+if ! $yes; then
+    state=$(git -C "$ROOT" rev-parse --abbrev-ref HEAD)@$(git -C "$ROOT" rev-parse --short HEAD)
+    [[ -z $(git -C "$ROOT" status --porcelain) ]] || state+=" (with uncommitted changes)"
+    confirm_yn "This will deploy the current code ($state) to the remote production server, $LABEL."
+fi
+require_env
 
 if $backup; then
     if app_running; then

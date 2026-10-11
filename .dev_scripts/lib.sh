@@ -203,3 +203,15 @@ confirm() {
     read -r answer || answer=
     [[ $answer == "$expect" ]] || die "aborted; nothing was changed"
 }
+
+# confirm_yn "what will happen": a plain y/N prompt for actions that are
+# outward-facing but not destructive. Anything but y/yes aborts.
+confirm_yn() {
+    local answer
+    printf '%s\nAre you sure? [y/N] ' "$1" >&2
+    read -r answer || answer=
+    case $answer in
+        y|Y|yes|YES|Yes) ;;
+        *) die "aborted; nothing was changed" ;;
+    esac
+}
