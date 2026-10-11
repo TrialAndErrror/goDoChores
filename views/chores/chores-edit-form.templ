@@ -7,7 +7,7 @@ import (
 	"goDoChores/views/base"
 )
 
-templ choresEditForm(chore models.Chore) {
+templ choresEditForm(chore models.Chore, picker TagPicker) {
 	@views.Base("chores") {
 		<div class="mb-3">
 			<a href={templ.URL(routes.URLFor("choresDetail", chore.ID))} class="btn btn-outline-secondary">← Back to Chore</a>
@@ -29,6 +29,9 @@ templ choresEditForm(chore models.Chore) {
 					<div class="mb-3">
 						<label for="time" class="form-label">Time (minutes)</label>
 						<input type="number" class="form-control" id="time" name="time" value={ fmt.Sprintf("%d", chore.Time) } min="1" required>
+					</div>
+					<div class="mb-3">
+						@tagPicker(picker)
 					</div>
 					<div class="d-flex justify-content-between">
 						<a href={templ.URL(routes.URLFor("choresDetail", chore.ID))} class="btn btn-outline-secondary">Cancel</a>

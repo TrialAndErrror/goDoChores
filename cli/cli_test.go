@@ -284,3 +284,33 @@ func TestDeleteUserErrors(t *testing.T) {
 		t.Error("alice should be untouched")
 	}
 }
+
+func TestDeleteUserCleansUpGroupsAndTags(t *testing.T) {
+	freshDB(t)
+	mustRun(t, "", "create-user", "-u", "alice", "-e", "alice@example.com", "-p", "a")
+	mustRun(t, "", "create-user", "-u", "bob", "-e", "bob@example.com", "-p", "b")
+	seedData(t, "alice")
+	alice, _ := findUser(t, "alice")
+	bob, _ := findUser(t, "bob")
+
+	db := database.DB
+	var chore models.Chore
+	db.Where("user_id = ?", alice.ID).First(&chore)
+	g := models.Group{Name: "G", OwnerID: alice.ID}
+	db.Create(&g)
+	tag := models.Tag{GroupID: &g.ID, Name: "kitchen"}
+	db.Create(&tag)
+	db.Create(&models.ChoreTag{ChoreID: chore.ID, TagID: tag.ID})
+	db.Create(&models.HiddenTag{UserID: bob.ID, TagID: tag.ID})
+	db.Create(&models.GroupMember{GroupID: g.ID, UserID: alice.ID})
+	db.Create(&models.GroupMember{GroupID: g.ID, UserID: bob.ID})
+	db.Create(&models.GroupInvite{GroupID: g.ID, Email: "carol@example.com", InvitedByID: alice.ID})
+
+	mustRun(t, "", "delete-user", "alice", "--yes")
+
+	for name, model := range map[string]any{"tags": &models.Tag{}, "tag links": &models.ChoreTag{}, "hidden tags": &models.HiddenTag{}, "groups": &models.Group{}, "members": &models.GroupMember{}, "invites": &models.GroupInvite{}} {
+		if n := rows(t, model, "1 = 1"); n != 0 {
+			t.Errorf("%d %s left behind", n, name)
+		}
+	}
+}

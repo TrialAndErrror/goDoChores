@@ -21,7 +21,7 @@ func DetailGet(w http.ResponseWriter, r *http.Request) {
 	}
 	choreID := chi.URLParam(r, "choreID")
 	var chore models.Chore
-	queryResult := db.Preload("Reminders").Where("user_id = ?", userID).First(&chore, choreID)
+	queryResult := db.Preload("Reminders").Preload("Tags.Tag").Where("user_id = ?", userID).First(&chore, choreID)
 	if queryResult.Error != nil {
 		http.Error(w, "Chore not found", http.StatusNotFound)
 		return
@@ -42,7 +42,7 @@ func DetailPost(w http.ResponseWriter, r *http.Request) {
 	}
 	choreID := chi.URLParam(r, "choreID")
 	var chore models.Chore
-	queryResult := db.Preload("Reminders").Where("user_id = ?", userID).First(&chore, choreID)
+	queryResult := db.Preload("Reminders").Preload("Tags.Tag").Where("user_id = ?", userID).First(&chore, choreID)
 	if queryResult.Error != nil {
 		http.Error(w, "Chore not found", http.StatusNotFound)
 		return
@@ -59,6 +59,9 @@ func DetailPost(w http.ResponseWriter, r *http.Request) {
 		// pointing at a chore that no longer exists.
 		deleteErr := db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Where("chore_id = ? AND user_id = ?", chore.ID, userID).Delete(&models.ChoreReminder{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("chore_id = ?", chore.ID).Delete(&models.ChoreTag{}).Error; err != nil {
 				return err
 			}
 			return tx.Delete(&chore).Error

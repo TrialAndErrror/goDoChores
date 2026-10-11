@@ -1,0 +1,134 @@
+package groups
+
+import (
+	"fmt"
+	"goDoChores/routes"
+	"goDoChores/views/base"
+)
+
+templ inviteList(invites []InviteView) {
+	if len(invites) > 0 {
+		<div class="card mb-4" data-bs-theme="dark">
+			<h2 class="card-header" style="padding: 1.5rem">Invitations</h2>
+			<ul class="list-group list-group-flush">
+				for _, inv := range invites {
+					<li class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+						<span><strong>{ inv.InvitedBy }</strong> invited you to join <strong>{ inv.GroupName }</strong></span>
+						<span class="d-flex gap-2">
+							<form method="post" action={ templ.URL(routes.URLFor("groupsInviteAnswer", inv.ID, "accept")) }>
+								<button type="submit" class="btn btn-sm btn-success">Accept</button>
+							</form>
+							<form method="post" action={ templ.URL(routes.URLFor("groupsInviteAnswer", inv.ID, "reject")) }>
+								<button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+							</form>
+						</span>
+					</li>
+				}
+			</ul>
+		</div>
+	}
+}
+
+templ memberRow(m MemberView) {
+	<li class="list-group-item d-flex justify-content-between align-items-center">
+		<span>
+			{ m.Username }
+			if m.IsMe {
+				<span class="badge text-bg-secondary">you</span>
+			}
+			if m.IsOwner {
+				<span class="badge text-bg-success">owner</span>
+			}
+		</span>
+	</li>
+}
+
+templ tagsToShow(options []TagOption) {
+	if len(options) > 0 {
+		<div class="card mb-4" data-bs-theme="dark">
+			<h2 class="card-header" style="padding: 1.5rem">Tags to Show</h2>
+			<div class="card-body">
+				<p class="text-muted"><small>Checked tags are shown on your home page. Reminders for chores with an unchecked tag are hidden. Untagged chores always show.</small></p>
+				<form method="post" action={ templ.URL(routes.URLFor("groupsTags")) }>
+					for i, opt := range options {
+						<input type="hidden" name="all" value={ fmt.Sprintf("%d", opt.ID) }/>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="checkbox" name="show" value={ fmt.Sprintf("%d", opt.ID) } id={ fmt.Sprintf("tag-%d", i) } checked?={ opt.Shown }/>
+							<label class="form-check-label" for={ fmt.Sprintf("tag-%d", i) }>{ opt.Name }</label>
+						</div>
+					}
+					<div class="mt-3"><button type="submit" class="btn btn-primary">Save</button></div>
+				</form>
+			</div>
+		</div>
+	}
+}
+
+templ groupPage(data pageData) {
+	@views.Base("groups") {
+		@inviteList(data.Invites)
+		if data.Group == nil {
+			<div class="card" data-bs-theme="dark">
+				<h2 class="card-header" style="padding: 1.5rem">Create a group</h2>
+				<div class="card-body">
+					<p>Groups let you see each other's chores on the home page.</p>
+					<form method="post" action={ templ.URL(routes.URLFor("groupsNew")) } class="d-flex gap-2">
+						<input type="text" class="form-control" name="name" placeholder="Group name" maxlength="100" required/>
+						<button type="submit" class="btn btn-primary">Create</button>
+					</form>
+				</div>
+			</div>
+		} else {
+			<div class="card mb-4" data-bs-theme="dark">
+				<h2 class="card-header" style="padding: 1.5rem">
+					{ data.Group.Name }
+					<small class="text-muted fs-6">Group ID { fmt.Sprintf("%d", data.Group.ID) }</small>
+				</h2>
+				<div class="card-body">
+					if data.IsOwner {
+						<form method="post" action={ templ.URL(routes.URLFor("groupsRename")) } class="d-flex gap-2 mb-3">
+							<input type="text" class="form-control" name="name" value={ data.Group.Name } maxlength="100" required aria-label="Group name"/>
+							<button type="submit" class="btn btn-primary">Rename</button>
+						</form>
+					}
+					<h5>Members</h5>
+					<ul class="list-group mb-3">
+						for _, m := range data.Members {
+							@memberRow(m)
+						}
+					</ul>
+					<p class="text-muted"><small>Members see each other's chores on the home page. Use Tags to Show below to choose which tagged chores appear.</small></p>
+					if data.IsOwner {
+						<form method="post" action={ templ.URL(routes.URLFor("groupsDelete")) } onsubmit="return confirm('Delete this group for everyone?')">
+							<button type="submit" class="btn btn-danger">Delete group</button>
+						</form>
+					} else {
+						<form method="post" action={ templ.URL(routes.URLFor("groupsLeave")) } onsubmit="return confirm('Leave this group?')">
+							<button type="submit" class="btn btn-outline-danger">Leave group</button>
+						</form>
+					}
+				</div>
+			</div>
+			if data.IsOwner {
+				<div class="card" data-bs-theme="dark">
+					<h2 class="card-header" style="padding: 1.5rem">Invite someone</h2>
+					<div class="card-body">
+						<form method="post" action={ templ.URL(routes.URLFor("groupsInvite")) } class="d-flex gap-2">
+							<input type="email" class="form-control" name="email" placeholder="Email address" required/>
+							<button type="submit" class="btn btn-primary">Invite</button>
+						</form>
+						if len(data.Sent) > 0 {
+							<h6 class="mt-3">Waiting for a reply</h6>
+							<ul class="mb-0">
+								for _, s := range data.Sent {
+									<li>{ s.Email }</li>
+								}
+							</ul>
+						}
+					</div>
+				</div>
+			}
+		}
+		@tagsToShow(data.Tags)
+	}
+}

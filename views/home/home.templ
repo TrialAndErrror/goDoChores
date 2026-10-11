@@ -19,8 +19,14 @@ templ itemCard(item CombinedItem) {
 				data-id={ fmt.Sprintf("%d", item.ID) }
 				data-date={ item.Date.Format("Monday January 02, 2006") }
 				data-interval={ item.Interval }
+				data-description={ item.Description }
+				data-time={ strconv.Itoa(item.Time) }
+				data-owner={ item.Owner }
 			>
 				{ item.Name } ({ item.Date.Format("Jan 02, 2006") })
+				if item.Owner != "" {
+					<span class="badge text-bg-secondary">{ item.Owner }</span>
+				}
 			</div>
 		} else {
 			<a href={ templ.URL(routes.URLFor("tasksDetail", item.ID)) } class="link-dark">
@@ -75,13 +81,16 @@ templ choresAndTasksWidget(items []CombinedItem, nextOffset int, hasMore bool) {
 					<p>Chore: <span id="manageChoreName"></span></p>
 					<p>Next Date: <span id="manageChoreDate"></span></p>
 					<p>Interval: <span id="manageChoreInterval"></span></p>
+					<p id="manageChoreTimeRow">Time: <span id="manageChoreTime"></span> minutes</p>
+					<p id="manageChoreDescriptionRow">Description: <span id="manageChoreDescription"></span></p>
+					<p id="manageChoreOwnerRow">Added by: <span id="manageChoreOwner"></span></p>
 				</div>
 				<div class="modal-footer">
 					<form method="post" class="w-100">
 						<input hidden="hidden" name="reminderID" value="" id="manageChoreID"/>
 						<div class="row">
 							<div class="col-12 col-md-6 px-4 py-2">
-								<button type="submit" name="action" value="delete" class="btn btn-danger">Delete</button>
+								<button type="submit" name="action" value="delete" class="btn btn-danger" id="manageChoreDelete">Delete</button>
 							</div>
 							<div class="col-12 col-md-6 px-4 py-2 d-flex">
 								<button type="submit" name="action" value="done" class="btn btn-success ms-auto">Mark as Completed</button>
@@ -94,13 +103,18 @@ templ choresAndTasksWidget(items []CombinedItem, nextOffset int, hasMore bool) {
 	</div>
 }
 
-templ home(items []CombinedItem, nextOffset int, hasMore bool) {
+templ home(items []CombinedItem, nextOffset int, hasMore bool, invites int64) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@views.Head()
 		<body class="min-vh-100" style="background-color: #67806f">
 			@views.Navbar("home")
 			<div class="container main-panel">
+				if invites > 0 {
+					<div class="alert alert-info">
+						You have a group invitation. <a href={ templ.URL(routes.URLFor("groups")) }>View it</a>.
+					</div>
+				}
 				@choresAndTasksWidget(items, nextOffset, hasMore)
 			</div>
 			@views.Footer() {
@@ -117,6 +131,17 @@ templ home(items []CombinedItem, nextOffset int, hasMore bool) {
 
                         const choreIntervalEl = document.querySelector("#manageChoreInterval")
                         if (choreIntervalEl) choreIntervalEl.innerText = data.interval
+
+                        document.querySelector("#manageChoreTime").innerText = data.time
+                        document.querySelector("#manageChoreTimeRow").hidden = !data.time || data.time === "0"
+                        document.querySelector("#manageChoreDescription").innerText = data.description
+                        document.querySelector("#manageChoreDescriptionRow").hidden = !data.description
+
+                        // Another member's reminder: show who owns it, and only
+                        // allow completing it (no delete).
+                        document.querySelector("#manageChoreOwner").innerText = data.owner
+                        document.querySelector("#manageChoreOwnerRow").hidden = !data.owner
+                        document.querySelector("#manageChoreDelete").hidden = !!data.owner
 
                         const choreIDEl = document.querySelector("#manageChoreID")
                         if (choreIDEl) choreIDEl.value = data.id

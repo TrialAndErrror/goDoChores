@@ -17,6 +17,7 @@ type Chore struct {
 	Name, Description string
 	Time              int
 	Reminders         []ChoreReminder `gorm:"foreignKey:ChoreID"`
+	Tags              []ChoreTag      `gorm:"foreignKey:ChoreID"`
 
 	UserID uint
 	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
@@ -172,4 +173,14 @@ func TaskFromForm(data url.Values, userID uint) (Task, error) {
 		UserID:      userID,
 	}
 	return task, nil
+}
+
+// TagNames returns the chore's tag names, sorted. Load "Tags.Tag" first.
+func (c Chore) TagNames() []string {
+	names := make([]string, 0, len(c.Tags))
+	for _, t := range c.Tags {
+		names = append(names, t.Tag.Name)
+	}
+	slices.Sort(names)
+	return names
 }

@@ -11,6 +11,7 @@ import (
 	"goDoChores/routes"
 
 	"github.com/go-chi/chi/v5"
+	"gorm.io/gorm"
 )
 
 func EditGet(w http.ResponseWriter, r *http.Request) {
@@ -30,13 +31,22 @@ func EditGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var chore models.Chore
-	result := db.Where("user_id = ?", userID).First(&chore, id)
+	result := db.Preload("Tags").Where("user_id = ?", userID).First(&chore, id)
 	if result.Error != nil {
 		http.Error(w, "Chore not found", http.StatusNotFound)
 		return
 	}
 
-	if renderErr := choresEditForm(chore).Render(context.Background(), w); renderErr != nil {
+	selected := make([]uint, 0, len(chore.Tags))
+	for _, t := range chore.Tags {
+		selected = append(selected, t.TagID)
+	}
+	picker, err := newTagPicker(userID, selected)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if renderErr := choresEditForm(chore, picker).Render(context.Background(), w); renderErr != nil {
 		http.Error(w, renderErr.Error(), http.StatusInternalServerError)
 	}
 }
@@ -78,9 +88,20 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 	chore.Name = updated.Name
 	chore.Description = updated.Description
 	chore.Time = updated.Time
+	tags, err := tagIDsFromForm(userID, r.PostForm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-	// Save the updated chore
-	if err := db.Save(&chore).Error; err != nil {
+	// Save the updated chore and its tags together.
+	saveErr := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Omit("Tags").Save(&chore).Error; err != nil {
+			return err
+		}
+		return saveTags(tx, chore.ID, tags)
+	})
+	if saveErr != nil {
 		http.Error(w, "Failed to update chore", http.StatusInternalServerError)
 		return
 	}

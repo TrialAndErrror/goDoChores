@@ -30,6 +30,11 @@ Basic deployment:
 - `./goDoChores create-user` to create the user (or whatever you called the binary, if you specified a name)
 - `./goDoChores` to run the server
 
+## Groups and tags
+
+- **Groups** (the *Group* page in the navbar): create a group, rename it, and invite people by the email address on their account. An invitation shows up on their home page and Group page, where they can accept or reject it. A user belongs to at most one group. Members see each other's chore reminders on the home page, labelled with the owner's name (click one to see its details and mark it completed; only the owner can delete or edit it). The owner can delete the group; other members can leave.
+- **Tags** are shared by everyone in a group. Without a group they are personal to you. On the chore create/edit form, pick tags from the *Tags* dropdown, or type a new name and click *Add New* to create it on the spot (it is added to the dropdown and ticked, no page reload). The *Tags to Show* section of the Group page lists the group's tags; unchecked tags are hidden from your home page, and the choice is saved per user. A reminder is hidden if its chore has any hidden tag. Untagged chores and tasks always show. Joining a group folds your personal tags into the group's (same name = same tag). Leaving a group, or the group being deleted, gives you personal copies of the tags your chores use, so you keep them.
+
 ## Managing users
 
 There is no sign-up page, so users are managed from the command line. Every command creates the database and its tables first if they don't exist yet.

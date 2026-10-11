@@ -64,7 +64,8 @@ func Migrate() error {
 	if DB == nil {
 		return fmt.Errorf("database is not open")
 	}
-	if err := DB.AutoMigrate(&models.Chore{}, &models.ChoreReminder{}, &models.Task{}, &models.User{}); err != nil {
+	if err := DB.AutoMigrate(&models.Chore{}, &models.ChoreReminder{}, &models.Task{}, &models.User{},
+		&models.Group{}, &models.GroupMember{}, &models.GroupInvite{}, &models.Tag{}, &models.ChoreTag{}, &models.HiddenTag{}); err != nil {
 		return fmt.Errorf("migrating database: %w", err)
 	}
 	return nil

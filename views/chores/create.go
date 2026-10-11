@@ -7,10 +7,22 @@ import (
 	"goDoChores/models"
 	"goDoChores/routes"
 	"net/http"
+
+	"gorm.io/gorm"
 )
 
 func CreateGet(w http.ResponseWriter, r *http.Request) {
-	component := choresCreatePage()
+	userID, err := auth.GetCurrentUserID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	picker, err := newTagPicker(userID, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	component := choresCreatePage(picker)
 	renderErr := component.Render(context.Background(), w)
 	if renderErr != nil {
 		http.Error(w, renderErr.Error(), http.StatusInternalServerError)
@@ -37,8 +49,20 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if result := db.Create(&chore); result.Error != nil {
-		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+	tags, tagsErr := tagIDsFromForm(userID, r.PostForm)
+	if tagsErr != nil {
+		http.Error(w, tagsErr.Error(), http.StatusBadRequest)
+		return
+	}
+
+	createErr := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&chore).Error; err != nil {
+			return err
+		}
+		return saveTags(tx, chore.ID, tags)
+	})
+	if createErr != nil {
+		http.Error(w, createErr.Error(), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, routes.URLFor("choresDetail", chore.ID), http.StatusFound)

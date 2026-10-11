@@ -1,0 +1,100 @@
+package chores
+
+import (
+	"goDoChores/routes"
+	"strconv"
+)
+
+templ tagPicker(p TagPicker) {
+	<label class="form-label">Tags</label>
+	<div class="dropdown mb-3" id="tagPicker" data-add-url={ routes.URLFor("groupsTagNew") }>
+		<button class="btn btn-outline-light dropdown-toggle" type="button" id="tagDropdownButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+			Select tags
+		</button>
+		<div class="dropdown-menu p-3" style="min-width: 16rem">
+			<div id="tagOptions">
+				for _, tag := range p.Tags {
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="tag_ids" value={ strconv.FormatUint(uint64(tag.ID), 10) } id={ "tag-" + strconv.FormatUint(uint64(tag.ID), 10) } checked?={ p.Selected[tag.ID] }/>
+						<label class="form-check-label" for={ "tag-" + strconv.FormatUint(uint64(tag.ID), 10) }>{ tag.Name }</label>
+					</div>
+				}
+			</div>
+			<p id="noTags" class="text-muted mb-2" hidden?={ len(p.Tags) > 0 }><small>No tags yet.</small></p>
+			<hr class="my-2"/>
+			<div class="input-group input-group-sm">
+				<input type="text" class="form-control" id="newTagName" placeholder="New tag" maxlength="30" aria-label="New tag name"/>
+				<button type="button" class="btn btn-success" id="addTagButton">Add New</button>
+			</div>
+			<div class="text-danger small mt-1" id="tagError" role="alert"></div>
+		</div>
+	</div>
+	<script>
+		(function () {
+			const options = document.querySelector("#tagOptions")
+			const nameInput = document.querySelector("#newTagName")
+			const errorEl = document.querySelector("#tagError")
+			const button = document.querySelector("#tagDropdownButton")
+
+			function updateButton() {
+				const n = options.querySelectorAll("input:checked").length
+				button.textContent = n === 0 ? "Select tags" : n + (n === 1 ? " tag selected" : " tags selected")
+				document.querySelector("#noTags").hidden = options.children.length > 0
+			}
+
+			// Insert (or tick) a tag in the dropdown, keeping it sorted by name.
+			function addOption(tag) {
+				let box = document.querySelector("#tag-" + tag.id)
+				if (!box) {
+					const row = document.createElement("div")
+					row.className = "form-check"
+					box = document.createElement("input")
+					box.className = "form-check-input"
+					box.type = "checkbox"
+					box.name = "tag_ids"
+					box.value = tag.id
+					box.id = "tag-" + tag.id
+					const label = document.createElement("label")
+					label.className = "form-check-label"
+					label.htmlFor = box.id
+					label.textContent = tag.name
+					row.append(box, label)
+					const next = Array.from(options.children).find((r) => r.textContent.trim() > tag.name)
+					options.insertBefore(row, next || null)
+				}
+				box.checked = true
+				updateButton()
+			}
+
+			async function addTag() {
+				const name = nameInput.value.trim()
+				if (!name) return
+				errorEl.textContent = ""
+				try {
+					const resp = await fetch(document.querySelector("#tagPicker").dataset.addUrl, {
+						method: "POST",
+						credentials: "same-origin",
+						headers: { "Content-Type": "application/x-www-form-urlencoded" },
+						body: new URLSearchParams({ name }),
+					})
+					if (!resp.ok) throw new Error((await resp.text()).trim() || "HTTP " + resp.status)
+					addOption(await resp.json())
+					nameInput.value = ""
+				} catch (err) {
+					errorEl.textContent = err.message
+				}
+			}
+
+			document.querySelector("#addTagButton").addEventListener("click", addTag)
+			// Enter adds the tag instead of submitting the whole chore form.
+			nameInput.addEventListener("keydown", (e) => {
+				if (e.key === "Enter") {
+					e.preventDefault()
+					addTag()
+				}
+			})
+			options.addEventListener("change", updateButton)
+			updateButton()
+		})()
+	</script>
+}

@@ -21,6 +21,14 @@ templ choresDetailPage(chore models.Chore) {
 				<p>Name: { chore.Name }</p>
 				<p>Description: { chore.Description }</p>
 				<p>Time: { fmt.Sprintf("%d", chore.Time) } minutes</p>
+				if len(chore.Tags) > 0 {
+					<p>
+						Tags:
+						for _, tag := range chore.TagNames() {
+							<span class="badge text-bg-secondary">{ tag }</span>
+						}
+					</p>
+				}
 			</div>
 			<div class="card-footer mt-3">
 				<div class="d-flex justify-content-between">

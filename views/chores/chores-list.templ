@@ -38,6 +38,9 @@ templ choresList(chores []models.Chore) {
 							<div class="card-body">
 								<h5 class="card-title">{ chore.Name }</h5>
 								<p class="card-text">{ chore.Description }</p>
+								for _, tag := range chore.TagNames() {
+									<span class="badge text-bg-secondary">{ tag }</span>
+								}
 								<p class="card-text">
 									<small class="text-muted">
 										<strong>Time:</strong> { fmt.Sprintf("%d", chore.Time) } minutes

@@ -7,6 +7,7 @@ import (
 	"goDoChores/cli"
 	"goDoChores/database"
 	"goDoChores/views/chores"
+	"goDoChores/views/groups"
 	"goDoChores/views/home"
 	"goDoChores/views/reminders"
 	"goDoChores/views/tasks"
@@ -51,6 +52,7 @@ func newRouter(tokenAuth *jwtauth.JWTAuth, csrf *http.CrossOriginProtection) htt
 		r.Mount("/chores", chores.ChoresRouter())
 		r.Mount("/reminders", reminders.RemindersRouter())
 		r.Mount("/tasks", tasks.TasksRouter())
+		r.Mount("/groups", groups.GroupsRouter())
 
 		r.Post("/logout", auth.LogoutPost)
 	})

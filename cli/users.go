@@ -115,6 +115,35 @@ func DeleteUser(db *gorm.DB, username string) (UserSummary, error) {
 		return summary, err
 	}
 	err = db.Transaction(func(tx *gorm.DB) error {
+		// Tags go before the chores they belong to; the user's own filter, group
+		// membership and sent invites go with them. A group they own is deleted
+		// outright (members, pending invites and all).
+		if err := tx.Unscoped().Where("chore_id IN (?)", tx.Unscoped().Model(&models.Chore{}).Select("id").Where("user_id = ?", summary.ID)).Delete(&models.ChoreTag{}).Error; err != nil {
+			return err
+		}
+		var owned []uint
+		if err := tx.Model(&models.Group{}).Where("owner_id = ?", summary.ID).Pluck("id", &owned).Error; err != nil {
+			return err
+		}
+		for _, id := range owned {
+			if err := models.DeleteGroup(tx, id); err != nil {
+				return err
+			}
+		}
+		if err := tx.Where("owner_id = ?", summary.ID).Delete(&models.Tag{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("invited_by_id = ?", summary.ID).Delete(&models.GroupInvite{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("email = ?", strings.ToLower(strings.TrimSpace(summary.Email))).Delete(&models.GroupInvite{}).Error; err != nil {
+			return err
+		}
+		for _, model := range []any{&models.GroupMember{}, &models.HiddenTag{}} {
+			if err := tx.Where("user_id = ?", summary.ID).Delete(model).Error; err != nil {
+				return err
+			}
+		}
 		for _, model := range []any{&models.ChoreReminder{}, &models.Task{}, &models.Chore{}} {
 			if err := tx.Unscoped().Where("user_id = ?", summary.ID).Delete(model).Error; err != nil {
 				return err

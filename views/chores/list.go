@@ -12,7 +12,7 @@ func GetAllChores(userID uint) ([]models.Chore, error) {
 	db := database.DB
 
 	var chores []models.Chore
-	result := db.Preload("Reminders").Where("user_id = ?", userID).Find(&chores)
+	result := db.Preload("Reminders").Preload("Tags.Tag").Where("user_id = ?", userID).Find(&chores)
 	if result.Error != nil {
 		return nil, result.Error
 	}
