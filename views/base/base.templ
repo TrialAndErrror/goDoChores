@@ -311,11 +311,49 @@ templ Head() {
 			}
 
 			.btn-outline-secondary:hover {
-				background-color: var(--neutral-lighter) !important;
-				color: var(--neutral-black) !important;
-				border-color: var(--neutral-white) !important;
+				background-color: var(--neutral-gray) !important;
+				color: var(--text-primary) !important;
+				border-color: var(--primary-green-light) !important;
 				transform: translateY(-2px);
-				box-shadow: 0 6px 20px rgba(156, 163, 175, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+				box-shadow: 0 6px 20px rgba(103, 128, 111, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+			}
+
+			/* Outline-light (tag picker): stays dark, border + text turn green on hover/open */
+			.btn-outline-light,
+			.card .btn-outline-light {
+				background-color: var(--bg-secondary) !important;
+				color: var(--text-primary) !important;
+				border-color: var(--border-color) !important;
+			}
+
+			.btn-outline-light:hover,
+			.btn-outline-light:focus,
+			.btn-outline-light.show,
+			.card .btn-outline-light:hover,
+			.card .btn-outline-light:focus,
+			.card .btn-outline-light.show {
+				background-color: var(--bg-secondary) !important;
+				color: var(--primary-green-light) !important;
+				border-color: var(--primary-green-light) !important;
+				transform: translateY(-2px);
+			}
+
+			/* Generic dropdown menus (tag picker) match the navbar dropdowns */
+			.dropdown-menu:not(.custom-dropdown) {
+				background-color: var(--bg-card);
+				border: 1px solid var(--border-color);
+				color: var(--text-primary);
+				box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+			}
+
+			.form-check-input:checked {
+				background-color: var(--primary-green);
+				border-color: var(--primary-green);
+			}
+
+			.form-check-input:focus {
+				border-color: var(--primary-green-light);
+				box-shadow: 0 0 0 0.2rem rgba(103, 128, 111, 0.25);
 			}
 
 			/* Custom button combining outline-primary with dark background */
