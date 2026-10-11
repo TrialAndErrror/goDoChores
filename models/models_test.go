@@ -34,7 +34,15 @@ func TestChoreFromForm(t *testing.T) {
 		t.Error("negative time: expected error")
 	}
 
-	for _, bad := range []string{"", "abc", "1.5"} {
+	// A blank or missing time is optional and stored as 0.
+	for _, form := range []url.Values{{"name": {"x"}, "time": {""}}, {"name": {"x"}}, {"name": {"x"}, "time": {"  "}}} {
+		blank, err := ChoreFromForm(form, 1)
+		if err != nil || blank.Time != 0 {
+			t.Errorf("blank time %v: got %+v, %v", form, blank, err)
+		}
+	}
+
+	for _, bad := range []string{"abc", "1.5"} {
 		if _, err := ChoreFromForm(url.Values{"name": {"x"}, "time": {bad}}, 1); err == nil {
 			t.Errorf("time %q: expected error", bad)
 		}

@@ -22,7 +22,7 @@ templ choresCreatePage(picker TagPicker) {
 					</div>
 					<div class="form-group">
 						<label for="time">Duration (minutes)</label>
-						<input type="number" class="form-control" id="time" name="time" placeholder="How long does the task normally take?"/>
+						<input type="number" class="form-control" id="time" name="time" min="0" placeholder="How long does the task normally take? (optional)"/>
 					</div>
 					<div class="form-group">
 						@tagPicker(picker)

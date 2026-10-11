@@ -28,7 +28,7 @@ templ choresEditForm(chore models.Chore, picker TagPicker) {
 					</div>
 					<div class="mb-3">
 						<label for="time" class="form-label">Time (minutes)</label>
-						<input type="number" class="form-control" id="time" name="time" value={ fmt.Sprintf("%d", chore.Time) } min="1" required>
+						<input type="number" class="form-control" id="time" name="time" value={ fmt.Sprintf("%d", chore.Time) } min="0">
 					</div>
 					<div class="mb-3">
 						@tagPicker(picker)

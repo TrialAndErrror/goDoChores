@@ -29,10 +29,14 @@ func ChoreFromForm(data url.Values, userID uint) (Chore, error) {
 		return Chore{}, errors.New("name is required")
 	}
 
-	timeString := data.Get("time")
-	timeValue, timeParseErr := strconv.Atoi(timeString)
-	if timeParseErr != nil {
-		return Chore{}, timeParseErr
+	// Time is optional: blank means "unspecified" and is stored as 0.
+	timeValue := 0
+	if timeString := strings.TrimSpace(data.Get("time")); timeString != "" {
+		var timeParseErr error
+		timeValue, timeParseErr = strconv.Atoi(timeString)
+		if timeParseErr != nil {
+			return Chore{}, errors.New("time must be a whole number of minutes")
+		}
 	}
 	if timeValue < 0 {
 		return Chore{}, errors.New("time cannot be negative")
