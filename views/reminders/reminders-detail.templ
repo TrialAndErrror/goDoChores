@@ -1,10 +1,11 @@
 package reminders
 
 import (
-    "goDoChores/models"
-    "goDoChores/routes"
-    "goDoChores/views/base"
+	"goDoChores/models"
+	"goDoChores/routes"
+	"goDoChores/views/base"
 )
+
 templ remindersDetailPage(chore models.Chore, reminder models.ChoreReminder) {
 	@views.Base("chores") {
 		<div class="card" data-bs-theme="dark">
@@ -18,9 +19,9 @@ templ remindersDetailPage(chore models.Chore, reminder models.ChoreReminder) {
 			</div>
 			<div class="card-footer mt-3">
 				<div class="d-flex justify-content-between">
-					<a href={templ.URL(routes.URLFor("choresList"))} class="btn btn-lg btn-outline-secondary">Back</a>
+					<a href={ templ.URL(routes.URLFor("choresList")) } class="btn btn-lg btn-outline-secondary">Back</a>
 					<div>
-						<a href={templ.URL(routes.URLFor("remindersEdit", reminder.ID))} class="btn btn-lg btn-primary me-2">Edit</a>
+						<a href={ templ.URL(routes.URLFor("remindersEdit", reminder.ID)) } class="btn btn-lg btn-primary me-2">Edit</a>
 						<button class="btn btn-lg btn-danger" data-bs-toggle="modal" data-bs-target="#deleteChoreModal">Delete</button>
 					</div>
 				</div>
@@ -36,7 +37,7 @@ templ remindersDetailPage(chore models.Chore, reminder models.ChoreReminder) {
 					<div class="modal-body">
 						<p>Are you sure you're like to delete this reminder: </p>
 						<p>{ chore.Name }</p>
-				        <p>Interval: { reminder.Interval }</p>
+						<p>Interval: { reminder.Interval }</p>
 					</div>
 					<div class="modal-footer">
 						<form method="post" class="w-100 d-flex justify-content-between">

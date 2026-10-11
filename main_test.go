@@ -65,7 +65,7 @@ func newTestApp(t *testing.T) (*testApp, seed) {
 
 	var s seed
 	mk := func(u *models.User) (chore, reminder, task uint) {
-		c := models.Chore{Name: u.Username + " chore", Description: "d", Time: 10, UserID: u.ID}
+		c := models.Chore{Name: u.Username + " chore", Description: "d", Time: "10 min", UserID: u.ID}
 		db.Create(&c)
 		r := models.ChoreReminder{ChoreID: uint64(c.ID), Date: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Interval: "Weekly", UserID: u.ID}
 		db.Create(&r)
@@ -291,7 +291,7 @@ func TestUsersCannotAccessEachOthersData(t *testing.T) {
 	// Nothing of alice's was changed or deleted.
 	var gotChore models.Chore
 	database.DB.First(&gotChore, s.aliceChore)
-	if gotChore.Name != "alice chore" || gotChore.Time != 10 {
+	if gotChore.Name != "alice chore" || gotChore.Time != "10 min" {
 		t.Errorf("alice's chore was modified: %+v", gotChore)
 	}
 	var gotReminder models.ChoreReminder
@@ -360,7 +360,7 @@ func TestInvalidFormsAreRejectedWithoutCreatingRows(t *testing.T) {
 	reminders := count(t, &models.ChoreReminder{}, "1 = 1")
 	tasks := count(t, &models.Task{}, "1 = 1")
 
-	expectStatus(t, a.do("alice", "POST", "/chores/new", url.Values{"name": {"x"}, "time": {"abc"}}), http.StatusBadRequest, "bad chore time")
+	expectStatus(t, a.do("alice", "POST", "/chores/new", url.Values{"name": {"x"}, "time": {strings.Repeat("a", 101)}}), http.StatusBadRequest, "bad chore time")
 	expectStatus(t, a.do("alice", "POST", "/reminders/new", url.Values{"date": {"bad"}, "choreID": {fmt.Sprint(s.aliceChore)}, "interval": {"Daily"}}), http.StatusBadRequest, "bad reminder date")
 	expectStatus(t, a.do("alice", "POST", "/reminders/new", url.Values{"date": {"2026-12-01"}, "choreID": {fmt.Sprint(s.aliceChore)}, "interval": {"Hourly"}}), http.StatusBadRequest, "bad reminder interval")
 	expectStatus(t, a.do("alice", "POST", "/tasks/new", url.Values{"name": {"x"}, "date": {"bad"}}), http.StatusBadRequest, "bad task date")
@@ -390,7 +390,7 @@ func TestOwnerCanCreateEditAndDelete(t *testing.T) {
 	expectStatus(t, rec, http.StatusSeeOther, "edit chore")
 	var c models.Chore
 	database.DB.First(&c, s.aliceChore)
-	if c.Name != "Renamed" || c.Time != 30 {
+	if c.Name != "Renamed" || c.Time != "30" {
 		t.Errorf("chore not updated: %+v", c)
 	}
 
@@ -486,8 +486,7 @@ func TestEditsValidateInput(t *testing.T) {
 	}{
 		{"chore empty name", chore, url.Values{"name": {""}, "time": {"5"}}},
 		{"chore blank name", chore, url.Values{"name": {"   "}, "time": {"5"}}},
-		{"chore negative time", chore, url.Values{"name": {"x"}, "time": {"-5"}}},
-		{"chore non-numeric time", chore, url.Values{"name": {"x"}, "time": {"abc"}}},
+		{"chore overlong time", chore, url.Values{"name": {"x"}, "time": {strings.Repeat("a", 101)}}},
 		{"reminder bogus interval", reminder, url.Values{"choreID": {ownChore}, "date": {"2026-12-01"}, "interval": {"Hourly"}}},
 		{"reminder bad date", reminder, url.Values{"choreID": {ownChore}, "date": {"garbage"}, "interval": {"Daily"}}},
 		{"reminder missing chore", reminder, url.Values{"date": {"2026-12-01"}, "interval": {"Daily"}}},
@@ -501,7 +500,7 @@ func TestEditsValidateInput(t *testing.T) {
 	// None of the rejected edits changed anything.
 	var gc models.Chore
 	database.DB.First(&gc, s.aliceChore)
-	if gc.Name != "alice chore" || gc.Time != 10 {
+	if gc.Name != "alice chore" || gc.Time != "10 min" {
 		t.Errorf("chore changed: %+v", gc)
 	}
 	var gr models.ChoreReminder
@@ -628,7 +627,7 @@ func TestHomeInfiniteScroll(t *testing.T) {
 			want = append(want, name)
 		} else {
 			name := fmt.Sprintf("c%02d", i)
-			c := models.Chore{Name: name, Time: 1, UserID: alice.ID}
+			c := models.Chore{Name: name, Time: "1 min", UserID: alice.ID}
 			database.DB.Create(&c)
 			database.DB.Create(&models.ChoreReminder{ChoreID: uint64(c.ID), Date: date, Interval: "Daily", UserID: alice.ID})
 			want = append(want, name)

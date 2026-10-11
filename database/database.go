@@ -68,5 +68,13 @@ func Migrate() error {
 		&models.Group{}, &models.GroupMember{}, &models.GroupInvite{}, &models.Tag{}, &models.ChoreTag{}, &models.HiddenTag{}); err != nil {
 		return fmt.Errorf("migrating database: %w", err)
 	}
+	// Chore time used to be whole minutes and is now freeform text. Rewrite the
+	// legacy numeric values once; neither statement matches after it has run.
+	if err := DB.Exec(`UPDATE chores SET time = '' WHERE time = '0'`).Error; err != nil {
+		return fmt.Errorf("migrating chore times: %w", err)
+	}
+	if err := DB.Exec(`UPDATE chores SET time = time || ' minutes' WHERE time != '' AND time NOT GLOB '*[^0-9]*'`).Error; err != nil {
+		return fmt.Errorf("migrating chore times: %w", err)
+	}
 	return nil
 }

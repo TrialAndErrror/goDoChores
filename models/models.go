@@ -15,7 +15,7 @@ import (
 type Chore struct {
 	gorm.Model
 	Name, Description string
-	Time              int
+	Time              string // freeform, e.g. "20 min" or "about an hour"
 	Reminders         []ChoreReminder `gorm:"foreignKey:ChoreID"`
 	Tags              []ChoreTag      `gorm:"foreignKey:ChoreID"`
 
@@ -29,17 +29,9 @@ func ChoreFromForm(data url.Values, userID uint) (Chore, error) {
 		return Chore{}, errors.New("name is required")
 	}
 
-	// Time is optional: blank means "unspecified" and is stored as 0.
-	timeValue := 0
-	if timeString := strings.TrimSpace(data.Get("time")); timeString != "" {
-		var timeParseErr error
-		timeValue, timeParseErr = strconv.Atoi(timeString)
-		if timeParseErr != nil {
-			return Chore{}, errors.New("time must be a whole number of minutes")
-		}
-	}
-	if timeValue < 0 {
-		return Chore{}, errors.New("time cannot be negative")
+	timeValue := strings.TrimSpace(data.Get("time"))
+	if len(timeValue) > 100 {
+		return Chore{}, errors.New("time must be 100 characters or fewer")
 	}
 
 	chore := Chore{

@@ -2,6 +2,7 @@ package models
 
 import (
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
@@ -15,13 +16,13 @@ func TestChoreFromForm(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if chore.Name != "Dishes" || chore.Description != "Wash up" || chore.Time != 15 || chore.UserID != 7 {
+	if chore.Name != "Dishes" || chore.Description != "Wash up" || chore.Time != "15" || chore.UserID != 7 {
 		t.Errorf("unexpected chore: %+v", chore)
 	}
 
 	// Surrounding whitespace is trimmed from the name.
 	trimmed, err := ChoreFromForm(url.Values{"name": {"  Dishes  "}, "time": {"0"}}, 1)
-	if err != nil || trimmed.Name != "Dishes" || trimmed.Time != 0 {
+	if err != nil || trimmed.Name != "Dishes" || trimmed.Time != "0" {
 		t.Errorf("trim/zero time: got %+v, %v", trimmed, err)
 	}
 
@@ -30,22 +31,15 @@ func TestChoreFromForm(t *testing.T) {
 			t.Errorf("name %q: expected error", name)
 		}
 	}
-	if _, err := ChoreFromForm(url.Values{"name": {"x"}, "time": {"-5"}}, 1); err == nil {
-		t.Error("negative time: expected error")
-	}
-
-	// A blank or missing time is optional and stored as 0.
-	for _, form := range []url.Values{{"name": {"x"}, "time": {""}}, {"name": {"x"}}, {"name": {"x"}, "time": {"  "}}} {
-		blank, err := ChoreFromForm(form, 1)
-		if err != nil || blank.Time != 0 {
-			t.Errorf("blank time %v: got %+v, %v", form, blank, err)
+	// Time is freeform text: blank is fine, anything reasonable is kept as typed.
+	for in, want := range map[string]string{"": "", "  ": "", " about an hour ": "about an hour", "20 min": "20 min"} {
+		c, err := ChoreFromForm(url.Values{"name": {"x"}, "time": {in}}, 1)
+		if err != nil || c.Time != want {
+			t.Errorf("time %q: got %q, %v; want %q", in, c.Time, err, want)
 		}
 	}
-
-	for _, bad := range []string{"abc", "1.5"} {
-		if _, err := ChoreFromForm(url.Values{"name": {"x"}, "time": {bad}}, 1); err == nil {
-			t.Errorf("time %q: expected error", bad)
-		}
+	if _, err := ChoreFromForm(url.Values{"name": {"x"}, "time": {strings.Repeat("a", 101)}}, 1); err == nil {
+		t.Error("overlong time: expected error")
 	}
 }
 

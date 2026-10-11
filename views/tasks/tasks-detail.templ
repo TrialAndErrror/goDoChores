@@ -20,12 +20,10 @@ templ tasksDetail(task models.Task) {
 							<div class="col-12">
 								<h5>Description</h5>
 								<p class="mb-4">{ task.Description }</p>
-								
 								<h5>Date</h5>
 								<p class="mb-4">{ task.Date.Format("Monday, January 2, 2006") }</p>
 							</div>
 						</div>
-						
 						<div class="d-flex justify-content-between">
 							<a href={ templ.URL(routes.URLFor("tasksList")) } class="btn btn-secondary">Back to Tasks</a>
 							<div>
@@ -36,7 +34,6 @@ templ tasksDetail(task models.Task) {
 				</div>
 			</div>
 		</div>
-		
 		<!-- Delete Task Modal -->
 		<div class="modal" tabindex="-1" id="deleteTaskModal" data-bs-theme="dark" style="color: white;">
 			<div class="modal-dialog">
@@ -60,4 +57,4 @@ templ tasksDetail(task models.Task) {
 			</div>
 		</div>
 	}
-} 
+}

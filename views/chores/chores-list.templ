@@ -1,10 +1,9 @@
 package chores
 
 import (
-	"fmt"
 	"goDoChores/models"
 	"goDoChores/routes"
-    "goDoChores/views/base"
+	"goDoChores/views/base"
 )
 
 templ choresList(chores []models.Chore) {
@@ -17,7 +16,6 @@ templ choresList(chores []models.Chore) {
 				</div>
 			</div>
 		</div>
-		
 		if len(chores) == 0 {
 			<div class="row">
 				<div class="col-12">
@@ -41,12 +39,13 @@ templ choresList(chores []models.Chore) {
 								for _, tag := range chore.TagNames() {
 									<span class="badge text-bg-secondary">{ tag }</span>
 								}
-								<p class="card-text">
-									<small class="text-muted">
-										<strong>Time:</strong> { fmt.Sprintf("%d", chore.Time) } minutes
-									</small>
-								</p>
-								
+								if chore.Time != "" {
+									<p class="card-text">
+										<small class="text-muted">
+											<strong>Time:</strong> { chore.Time }
+										</small>
+									</p>
+								}
 								if len(chore.Reminders) > 0 {
 									<div class="reminder-tiles mt-3">
 										<small class="text-muted mb-2 d-block">
@@ -57,7 +56,8 @@ templ choresList(chores []models.Chore) {
 												<a href={ templ.URL(routes.URLFor("remindersDetail", reminder.ID)) } class="reminder-tile-link">
 													<div class="reminder-tile">
 														<small>
-															<strong>{ reminder.Interval }</strong><br>
+															<strong>{ reminder.Interval }</strong>
+															<br/>
 															{ reminder.Date.Format("Jan 02") }
 														</small>
 													</div>

@@ -20,7 +20,7 @@ templ itemCard(item CombinedItem) {
 				data-date={ item.Date.Format("Monday January 02, 2006") }
 				data-interval={ item.Interval }
 				data-description={ item.Description }
-				data-time={ strconv.Itoa(item.Time) }
+				data-time={ item.Time }
 				data-owner={ item.Owner }
 			>
 				{ item.Name } ({ item.Date.Format("Jan 02, 2006") })
@@ -81,7 +81,7 @@ templ choresAndTasksWidget(items []CombinedItem, nextOffset int, hasMore bool) {
 					<p>Chore: <span id="manageChoreName"></span></p>
 					<p>Next Date: <span id="manageChoreDate"></span></p>
 					<p>Interval: <span id="manageChoreInterval"></span></p>
-					<p id="manageChoreTimeRow">Time: <span id="manageChoreTime"></span> minutes</p>
+					<p id="manageChoreTimeRow">Time: <span id="manageChoreTime"></span></p>
 					<p id="manageChoreDescriptionRow">Description: <span id="manageChoreDescription"></span></p>
 					<p id="manageChoreOwnerRow">Added by: <span id="manageChoreOwner"></span></p>
 				</div>
@@ -133,7 +133,7 @@ templ home(items []CombinedItem, nextOffset int, hasMore bool, invites int64) {
                         if (choreIntervalEl) choreIntervalEl.innerText = data.interval
 
                         document.querySelector("#manageChoreTime").innerText = data.time
-                        document.querySelector("#manageChoreTimeRow").hidden = !data.time || data.time === "0"
+                        document.querySelector("#manageChoreTimeRow").hidden = !data.time
                         document.querySelector("#manageChoreDescription").innerText = data.description
                         document.querySelector("#manageChoreDescriptionRow").hidden = !data.description
 

@@ -22,7 +22,7 @@ type CombinedItem struct {
 	Type        string // "chore" or "task"
 	Description string
 	Interval    string // only for chores
-	Time        int    // minutes, chores only
+	Time        string // freeform, chores only
 	Owner       string // username of another group member; empty for your own items
 }
 
@@ -34,7 +34,7 @@ type groupReminder struct {
 	ChoreID     uint
 	Name        string
 	Description string
-	Time        int
+	Time        string
 	Owner       string
 	UserID      uint
 }

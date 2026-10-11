@@ -1,8 +1,6 @@
 package chores
 
-import (
-    "goDoChores/views/base"
-)
+import "goDoChores/views/base"
 
 templ choresCreatePage(picker TagPicker) {
 	@views.Base("chores") {
@@ -21,8 +19,8 @@ templ choresCreatePage(picker TagPicker) {
 						<textarea class="form-control" id="description" name="description" placeholder="Describe the chore to be performed"></textarea>
 					</div>
 					<div class="form-group">
-						<label for="time">Duration (minutes)</label>
-						<input type="number" class="form-control" id="time" name="time" min="0" placeholder="How long does the task normally take? (optional)"/>
+						<label for="time">Duration</label>
+						<input type="text" class="form-control" id="time" name="time" maxlength="100" placeholder="How long does it normally take? e.g. 20 min (optional)"/>
 					</div>
 					<div class="form-group">
 						@tagPicker(picker)

@@ -304,7 +304,7 @@ func TestHomeShowsGroupChoresAndFiltersByTag(t *testing.T) {
 	app, s := newTestApp(t)
 	db := database.DB
 	carol := addUser(t, "carol")
-	cc := models.Chore{Name: "carol chore", Time: 1, UserID: carol.ID}
+	cc := models.Chore{Name: "carol chore", Time: "1 min", UserID: carol.ID}
 	db.Create(&cc)
 	db.Create(&models.ChoreReminder{ChoreID: uint64(cc.ID), Date: time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC), Interval: "Weekly", UserID: carol.ID})
 

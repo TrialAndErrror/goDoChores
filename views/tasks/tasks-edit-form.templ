@@ -16,19 +16,16 @@ templ tasksEditForm(task models.Task) {
 						<form method="post" action={ templ.URL(routes.URLFor("tasksEdit", task.ID)) } class="custom-form">
 							<div class="mb-3">
 								<label for="name" class="form-label">Task Name</label>
-								<input type="text" class="form-control" id="name" name="name" value={ task.Name } required>
+								<input type="text" class="form-control" id="name" name="name" value={ task.Name } required/>
 							</div>
-							
 							<div class="mb-3">
 								<label for="description" class="form-label">Description</label>
 								<textarea class="form-control" id="description" name="description" rows="3">{ task.Description }</textarea>
 							</div>
-							
 							<div class="mb-3">
 								<label for="date" class="form-label">Date</label>
-								<input type="date" class="form-control" id="date" name="date" value={ task.Date.Format("2006-01-02") } required>
+								<input type="date" class="form-control" id="date" name="date" value={ task.Date.Format("2006-01-02") } required/>
 							</div>
-							
 							<div class="d-flex justify-content-between">
 								<a href={ templ.URL(routes.URLFor("tasksDetail", task.ID)) } class="btn btn-secondary">Cancel</a>
 								<button type="submit" class="btn btn-primary">Update Task</button>
@@ -39,4 +36,4 @@ templ tasksEditForm(task models.Task) {
 			</div>
 		</div>
 	}
-} 
+}
