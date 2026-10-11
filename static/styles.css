@@ -471,6 +471,7 @@ input[type="date"]::-webkit-outer-spin-button {
 
 /* Chore Card Styling */
 .chore-card {
+	cursor: pointer;
 	background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--neutral-gray) 100%) !important;
 	display: flex;
 	justify-content: center;
@@ -496,6 +497,7 @@ input[type="date"]::-webkit-outer-spin-button {
 
 /* Task Card Styling */
 .task-card {
+	cursor: pointer;
 	background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--neutral-gray) 100%) !important;
 	display: flex;
 	justify-content: center;

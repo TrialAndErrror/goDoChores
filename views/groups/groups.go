@@ -438,7 +438,7 @@ func GroupTags(db *gorm.DB, userID uint) ([]models.Tag, error) {
 		return nil, err
 	}
 	var tags []models.Tag
-	err = db.Where("group_id = ?", m.GroupID).Order("name").Find(&tags).Error
+	err = db.Where("group_id = ?", m.GroupID).Order("name COLLATE NOCASE").Find(&tags).Error
 	return tags, err
 }
 
@@ -450,7 +450,7 @@ func UserTags(db *gorm.DB, userID uint) ([]models.Tag, error) {
 		return nil, err
 	}
 	var tags []models.Tag
-	q := db.Order("name")
+	q := db.Order("name COLLATE NOCASE")
 	if m != nil {
 		q = q.Where("group_id = ?", m.GroupID)
 	} else {

@@ -40,6 +40,8 @@ func EditGet(w http.ResponseWriter, r *http.Request) {
 	var chores []models.Chore
 	db.Where(models.Chore{UserID: userID}).Find(&chores)
 
+	sortChoresByName(chores)
+
 	if renderErr := remindersEditPage(reminder, chores, models.GetIntervalNames()).Render(context.Background(), w); renderErr != nil {
 		http.Error(w, renderErr.Error(), http.StatusInternalServerError)
 	}

@@ -1,6 +1,7 @@
 package reminders
 
 import (
+	"cmp"
 	"context"
 	"goDoChores/auth"
 	"goDoChores/database"
@@ -8,6 +9,9 @@ import (
 	"goDoChores/routes"
 	"goDoChores/views/chores"
 	"net/http"
+	"slices"
+	"strconv"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -17,6 +21,13 @@ func userOwnsChore(db *gorm.DB, userID uint, choreID uint64) bool {
 	var count int64
 	db.Model(&models.Chore{}).Where("id = ? AND user_id = ?", choreID, userID).Count(&count)
 	return count > 0
+}
+
+// sortChoresByName orders chores for a dropdown: alphabetical, ignoring case.
+func sortChoresByName(chores []models.Chore) {
+	slices.SortStableFunc(chores, func(a, b models.Chore) int {
+		return cmp.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name))
+	})
 }
 
 func CreateGet(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +42,11 @@ func CreateGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	component := remindersCreatePage(chores, models.GetIntervalNames())
+	sortChoresByName(chores)
+	// The chore page links here with ?choreID= to preselect its chore. An id
+	// that is missing, malformed or not one of the user's chores selects nothing.
+	selected, _ := strconv.ParseUint(r.URL.Query().Get("choreID"), 10, 32)
+	component := remindersCreatePage(chores, models.GetIntervalNames(), uint(selected))
 	renderErr := component.Render(context.Background(), w)
 	if renderErr != nil {
 		http.Error(w, renderErr.Error(), http.StatusInternalServerError)

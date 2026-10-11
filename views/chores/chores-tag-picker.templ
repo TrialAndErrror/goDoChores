@@ -59,7 +59,7 @@ templ tagPicker(p TagPicker) {
 					label.htmlFor = box.id
 					label.textContent = tag.name
 					row.append(box, label)
-					const next = Array.from(options.children).find((r) => r.textContent.trim() > tag.name)
+					const next = Array.from(options.children).find((r) => r.textContent.trim().toLowerCase() > tag.name.toLowerCase())
 					options.insertBefore(row, next || null)
 				}
 				box.checked = true

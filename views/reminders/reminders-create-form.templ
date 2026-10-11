@@ -6,7 +6,7 @@ import (
 	"goDoChores/views/base"
 )
 
-templ remindersCreatePage(chores []models.Chore, intervals []string) {
+templ remindersCreatePage(chores []models.Chore, intervals []string, selectedChore uint) {
 	@views.Base("chores") {
 		<div class="card" data-bs-theme="dark">
 			<h2 class="card-header" style="padding: 1.5rem">
@@ -18,7 +18,7 @@ templ remindersCreatePage(chores []models.Chore, intervals []string) {
 						<label for="choreID">Chore</label>
 						<select id="choreID" name="choreID" class="form-control">
 							for _, el := range chores {
-								<option value={ fmt.Sprintf("%d", el.ID) }>{ el.Name }</option>
+								<option value={ fmt.Sprintf("%d", el.ID) } selected?={ el.ID == selectedChore }>{ el.Name }</option>
 							}
 						</select>
 					</div>
