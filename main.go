@@ -6,6 +6,7 @@ import (
 	"goDoChores/auth"
 	"goDoChores/cli"
 	"goDoChores/database"
+	"goDoChores/static"
 	"goDoChores/views/chores"
 	"goDoChores/views/groups"
 	"goDoChores/views/home"
@@ -35,6 +36,9 @@ func newRouter(tokenAuth *jwtauth.JWTAuth, csrf *http.CrossOriginProtection) htt
 	r.Use(middleware.Logger)
 	// Reject cross-site form posts (CSRF) before any handler sees them.
 	r.Use(csrf.Handler)
+
+	// Public static assets (stylesheet); no session needed.
+	r.Handle(static.Prefix+"*", static.Handler())
 
 	// Login routes
 	r.Group(func(r chi.Router) {
