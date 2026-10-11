@@ -78,11 +78,8 @@ templ Head() {
 				--accent-gold-light: #e6c866;
 				--accent-red: #dc3545;
 				--accent-red-light: #e74c3c;
-				--accent-blue: #3498db;
-				--accent-blue-light: #5dade2;
 				
 				/* Background Colors */
-				--bg-primary: var(--primary-green);
 				--bg-secondary: var(--neutral-dark);
 				--bg-card: var(--neutral-black);
 				--bg-navbar: var(--neutral-black);
@@ -319,6 +316,14 @@ templ Head() {
 			/* Outline-light (tag picker): stays dark, border + text turn green on hover/open */
 			.btn-outline-light,
 			.card .btn-outline-light {
+				/* Bootstrap fills the pressed/open state from these variables (white by default) */
+				--bs-btn-hover-bg: var(--bg-secondary);
+				--bs-btn-hover-color: var(--primary-green-light);
+				--bs-btn-hover-border-color: var(--primary-green-light);
+				--bs-btn-active-bg: var(--bg-secondary);
+				--bs-btn-active-color: var(--primary-green-light);
+				--bs-btn-active-border-color: var(--primary-green-light);
+				--bs-btn-focus-shadow-rgb: 139, 160, 140;
 				background-color: var(--bg-secondary) !important;
 				color: var(--text-primary) !important;
 				border-color: var(--border-color) !important;
@@ -326,14 +331,41 @@ templ Head() {
 
 			.btn-outline-light:hover,
 			.btn-outline-light:focus,
+			.btn-outline-light:focus-visible,
+			.btn-outline-light:active,
+			.btn-outline-light.active,
 			.btn-outline-light.show,
+			.btn-outline-light:first-child:active,
+			.show > .btn-outline-light.dropdown-toggle,
 			.card .btn-outline-light:hover,
 			.card .btn-outline-light:focus,
-			.card .btn-outline-light.show {
+			.card .btn-outline-light:focus-visible,
+			.card .btn-outline-light:active,
+			.card .btn-outline-light.active,
+			.card .btn-outline-light.show,
+			.card .btn-outline-light:first-child:active,
+			.card .show > .btn-outline-light.dropdown-toggle {
 				background-color: var(--bg-secondary) !important;
 				color: var(--primary-green-light) !important;
 				border-color: var(--primary-green-light) !important;
 				transform: translateY(-2px);
+			}
+
+			.btn-outline-danger {
+				background-color: transparent !important;
+				color: var(--accent-red-light) !important;
+				border-color: var(--accent-red) !important;
+				box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+			}
+
+			.btn-outline-danger:hover,
+			.btn-outline-danger:active,
+			.btn-outline-danger:focus-visible {
+				background-color: var(--accent-red) !important;
+				color: var(--text-primary) !important;
+				border-color: var(--accent-red-light) !important;
+				transform: translateY(-2px);
+				box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
 			}
 
 			/* Generic dropdown menus (tag picker) match the navbar dropdowns */
@@ -458,11 +490,6 @@ templ Head() {
 				color: var(--text-secondary) !important;
 			}
 
-			/* Ensure buttons in cards have proper contrast */
-			.card .btn {
-				color: var(--text-primary) !important;
-			}
-
 			/* Reminder Tiles Styling */
 			.reminder-tiles {
 				border-top: 1px solid var(--border-light);
@@ -476,11 +503,6 @@ templ Head() {
 			}
 
 			.reminder-tile-link {
-				text-decoration: none;
-				color: inherit;
-			}
-
-			.reminder-tile-link:hover {
 				text-decoration: none;
 				color: inherit;
 			}
