@@ -119,25 +119,32 @@ func TestIntervals(t *testing.T) {
 
 func TestGetNextReminderDate(t *testing.T) {
 	now := time.Now()
+	day := func(offset int) time.Time {
+		y, m, d := now.AddDate(0, 0, offset).Date()
+		return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+	}
 	cases := []struct {
+		name     string
 		interval string
 		value    int
+		due      time.Time
 		want     time.Time
 	}{
-		{"Day", 1, now.AddDate(0, 0, 1)},
-		{"Day", 3, now.AddDate(0, 0, 3)},
-		{"Week", 2, now.AddDate(0, 0, 14)},
-		{"Month", 1, now.AddDate(0, 1, 0)},
-		{"Year", 2, now.AddDate(2, 0, 0)},
+		{"due today", "Day", 1, day(0), day(1)},
+		{"due tomorrow is skipped", "Day", 1, day(1), day(2)},
+		{"3 days late, every 7 days stays anchored", "Week", 1, day(-3), day(4)},
+		{"every 2 weeks, due today", "Week", 2, day(0), day(14)},
+		{"long overdue skips missed occurrences", "Day", 3, day(-10), day(2)},
+		{"early completion", "Week", 1, day(5), day(12)},
 	}
 	for _, c := range cases {
-		got, err := GetNextReminderDate(ChoreReminder{Interval: c.interval, IntervalValue: c.value})
+		got, err := GetNextReminderDate(ChoreReminder{Interval: c.interval, IntervalValue: c.value, Date: c.due})
 		if err != nil {
-			t.Errorf("%s x%d: unexpected error: %v", c.interval, c.value, err)
+			t.Errorf("%s: unexpected error: %v", c.name, err)
 			continue
 		}
-		if d := got.Sub(c.want); d < -time.Minute || d > time.Minute {
-			t.Errorf("%s x%d: got %v, want about %v", c.interval, c.value, got, c.want)
+		if !got.Equal(c.want) {
+			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
 		}
 	}
 
@@ -237,6 +244,32 @@ func TestNextDayOfMonth(t *testing.T) {
 	}
 	for _, c := range cases {
 		if got := nextDayOfMonth(c.due, c.now, c.day); !got.Equal(c.want) {
+			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+func TestNextAfterMonthsAndYears(t *testing.T) {
+	d := func(y int, m time.Month, day int) time.Time { return time.Date(y, m, day, 0, 0, 0, 0, time.UTC) }
+	now := d(2026, 3, 10)
+	cases := []struct {
+		name string
+		step func(t time.Time, k int) time.Time
+		due  time.Time
+		want time.Time
+	}{
+		{"month clamps Jan 31", func(t time.Time, k int) time.Time { return addMonthsClamped(t, k) }, d(2026, 1, 31), d(2026, 3, 31)},
+		{"month from Feb 28", func(t time.Time, k int) time.Time { return addMonthsClamped(t, k) }, d(2026, 2, 28), d(2026, 3, 28)},
+		{"every 2 months, due Jan 15", func(t time.Time, k int) time.Time { return addMonthsClamped(t, 2*k) }, d(2026, 1, 15), d(2026, 3, 15)},
+		{"month rolls the year", func(t time.Time, k int) time.Time { return addMonthsClamped(t, k) }, d(2026, 12, 20), d(2027, 1, 20)},
+		{"year clamps Feb 29", func(t time.Time, k int) time.Time { return addMonthsClamped(t, 12*k) }, d(2024, 2, 29), d(2027, 2, 28)},
+	}
+	for _, c := range cases {
+		nw := now
+		if c.name == "month rolls the year" {
+			nw = d(2026, 12, 25)
+		}
+		if got := nextAfter(c.due, nw, c.step); !got.Equal(c.want) {
 			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
 		}
 	}

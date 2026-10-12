@@ -421,8 +421,12 @@ func TestMarkingRemindersDone(t *testing.T) {
 	expectStatus(t, rec, http.StatusFound, "done weekly")
 	var r models.ChoreReminder
 	database.DB.First(&r, s.aliceReminder)
-	if r.Date.Before(time.Now().AddDate(0, 0, 6)) {
-		t.Errorf("weekly reminder not rescheduled: %v", r.Date)
+	// The seed reminder is weeks overdue: it stays on its original weekly
+	// schedule and lands on the first occurrence after today.
+	seedDate := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	sinceSeed := int(r.Date.Sub(seedDate).Hours() / 24)
+	if sinceSeed%7 != 0 || !r.Date.After(time.Now()) || r.Date.After(time.Now().AddDate(0, 0, 7)) {
+		t.Errorf("weekly reminder not rescheduled on its original schedule: %v", r.Date)
 	}
 
 	// A one-off reminder is removed.

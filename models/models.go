@@ -169,20 +169,51 @@ func GetNextReminderDate(reminder ChoreReminder) (time.Time, error) {
 		return time.Time{}, errors.New("invalid interval value")
 	}
 	now := time.Now()
+	n := reminder.IntervalValue
 	switch reminder.Interval {
 	case "Day":
-		return now.AddDate(0, 0, reminder.IntervalValue), nil
+		return nextAfter(reminder.Date, now, func(t time.Time, k int) time.Time { return t.AddDate(0, 0, k*n) }), nil
 	case "Week":
-		return now.AddDate(0, 0, 7*reminder.IntervalValue), nil
+		return nextAfter(reminder.Date, now, func(t time.Time, k int) time.Time { return t.AddDate(0, 0, 7*k*n) }), nil
 	case "Month":
-		return now.AddDate(0, reminder.IntervalValue, 0), nil
+		return nextAfter(reminder.Date, now, func(t time.Time, k int) time.Time { return addMonthsClamped(t, k*n) }), nil
 	case "Year":
-		return now.AddDate(reminder.IntervalValue, 0, 0), nil
+		return nextAfter(reminder.Date, now, func(t time.Time, k int) time.Time { return addMonthsClamped(t, 12*k*n) }), nil
 	case "DOM":
 		return nextDayOfMonth(reminder.Date, now, reminder.IntervalValue), nil
 	default:
 		return time.Time{}, errors.New("invalid interval")
 	}
+}
+
+// nextAfter steps due forward by step(due, 1), step(due, 2), ... and returns
+// the first date that falls on a calendar day after today. The schedule stays
+// anchored to the reminder's own date: completing it late (or early) never
+// shifts it, and a long-overdue reminder skips the occurrences already missed.
+func nextAfter(due, now time.Time, step func(t time.Time, k int) time.Time) time.Time {
+	for k := 1; ; k++ {
+		next := step(due, k)
+		if dayKey(next) > dayKey(now) {
+			return next
+		}
+	}
+}
+
+// dayKey orders times by calendar day, ignoring time of day and location.
+func dayKey(t time.Time) int {
+	y, m, d := t.Date()
+	return y*10000 + int(m)*100 + d
+}
+
+// addMonthsClamped adds months to t, clamping to the last day of a shorter
+// target month (Jan 31 + 1 month is Feb 28, not Mar 3).
+func addMonthsClamped(t time.Time, months int) time.Time {
+	y, m, d := t.Date()
+	m += time.Month(months)
+	// Normalize the month into the year before clamping the day.
+	first := time.Date(y, m, 1, 0, 0, 0, 0, t.Location())
+	return time.Date(first.Year(), first.Month(), clampDay(first.Year(), first.Month(), d),
+		t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
 }
 
 // nextDayOfMonth returns the first occurrence of the given day of the month
