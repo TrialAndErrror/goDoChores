@@ -56,7 +56,7 @@ templ choresList(chores []models.Chore) {
 												<a href={ templ.URL(routes.URLFor("remindersDetail", reminder.ID)) } class="reminder-tile-link">
 													<div class="reminder-tile">
 														<small>
-															<strong>{ reminder.Interval }</strong>
+															<strong>{ reminder.Describe() }</strong>
 															<br/>
 															{ reminder.Date.Format("Jan 02") }
 														</small>

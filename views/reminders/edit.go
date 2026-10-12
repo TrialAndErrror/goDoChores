@@ -88,6 +88,7 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 	reminder.ChoreID = updated.ChoreID
 	reminder.Date = updated.Date
 	reminder.Interval = updated.Interval
+	reminder.IntervalValue = updated.IntervalValue
 
 	// Save the updated reminder
 	if err := db.Save(&reminder).Error; err != nil {

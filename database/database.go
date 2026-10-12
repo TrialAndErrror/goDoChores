@@ -76,5 +76,18 @@ func Migrate() error {
 	if err := DB.Exec(`UPDATE chores SET time = time || ' minutes' WHERE time != '' AND time NOT GLOB '*[^0-9]*'`).Error; err != nil {
 		return fmt.Errorf("migrating chore times: %w", err)
 	}
+	// Reminder intervals used to be fixed names ("Weekly"); they are now a unit
+	// plus a count. Rewrite the legacy rows once; the statements no longer match
+	// after it has run.
+	for old, repl := range map[string]string{
+		"Daily":   "Day",
+		"Weekly":  "Week",
+		"Monthly": "Month",
+		"Annual":  "Year",
+	} {
+		if err := DB.Exec(`UPDATE chore_reminders SET interval = ?, interval_value = 1 WHERE interval = ?`, repl, old).Error; err != nil {
+			return fmt.Errorf("migrating reminder intervals: %w", err)
+		}
+	}
 	return nil
 }

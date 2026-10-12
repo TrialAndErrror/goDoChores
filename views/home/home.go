@@ -28,15 +28,16 @@ type CombinedItem struct {
 
 // groupReminder is a chore reminder together with who owns it.
 type groupReminder struct {
-	ReminderID  int
-	Interval    string
-	Date        time.Time
-	ChoreID     uint
-	Name        string
-	Description string
-	Time        string
-	Owner       string
-	UserID      uint
+	ReminderID    int
+	Interval      string
+	IntervalValue int
+	Date          time.Time
+	ChoreID       uint
+	Name          string
+	Description   string
+	Time          string
+	Owner         string
+	UserID        uint
 }
 
 const (
@@ -69,7 +70,7 @@ func visibleReminders(userID uint) ([]groupReminder, error) {
 
 	var rows []groupReminder
 	err = db.Model(&models.ChoreReminder{}).
-		Select("chore_reminders.id as reminder_id, chore_reminders.interval, chore_reminders.date, chores.id as chore_id, chores.name, chores.description, chores.time, users.username as owner, chore_reminders.user_id").
+		Select("chore_reminders.id as reminder_id, chore_reminders.interval, chore_reminders.interval_value, chore_reminders.date, chores.id as chore_id, chores.name, chores.description, chores.time, users.username as owner, chore_reminders.user_id").
 		Joins("join chores on chore_reminders.chore_id = chores.id AND chores.deleted_at IS NULL").
 		Joins("join users on users.id = chore_reminders.user_id AND users.deleted_at IS NULL").
 		Where("chore_reminders.user_id IN ?", ids).
@@ -144,7 +145,7 @@ func GetCombinedItems(userID uint) ([]CombinedItem, error) {
 			Name:        reminder.Name,
 			Date:        reminder.Date,
 			Type:        "chore",
-			Interval:    reminder.Interval,
+			Interval:    models.ChoreReminder{Interval: reminder.Interval, IntervalValue: reminder.IntervalValue}.Describe(),
 			Description: reminder.Description,
 			Time:        reminder.Time,
 		}

@@ -45,7 +45,7 @@ func TestChoreFromForm(t *testing.T) {
 
 func TestChoreReminderFromForm(t *testing.T) {
 	valid := func() url.Values {
-		return url.Values{"date": {"2026-10-12"}, "choreID": {"3"}, "interval": {"Weekly"}}
+		return url.Values{"date": {"2026-10-12"}, "choreID": {"3"}, "interval": {"Week"}, "intervalValue": {"1"}}
 	}
 
 	r, err := ChoreReminderFromForm(valid(), 9)
@@ -53,7 +53,7 @@ func TestChoreReminderFromForm(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	want := time.Date(2026, 10, 12, 0, 0, 0, 0, time.UTC)
-	if !r.Date.Equal(want) || r.ChoreID != 3 || r.Interval != "Weekly" || r.UserID != 9 {
+	if !r.Date.Equal(want) || r.ChoreID != 3 || r.Interval != "Week" || r.UserID != 9 {
 		t.Errorf("unexpected reminder: %+v", r)
 	}
 
@@ -119,27 +119,86 @@ func TestIntervals(t *testing.T) {
 
 func TestGetNextReminderDate(t *testing.T) {
 	now := time.Now()
-	cases := map[string]time.Time{
-		"Daily":   now.AddDate(0, 0, 1),
-		"Weekly":  now.AddDate(0, 0, 7),
-		"Monthly": now.AddDate(0, 1, 0),
-		"Annual":  now.AddDate(1, 0, 0),
+	cases := []struct {
+		interval string
+		value    int
+		want     time.Time
+	}{
+		{"Day", 1, now.AddDate(0, 0, 1)},
+		{"Day", 3, now.AddDate(0, 0, 3)},
+		{"Week", 2, now.AddDate(0, 0, 14)},
+		{"Month", 1, now.AddDate(0, 1, 0)},
+		{"Year", 2, now.AddDate(2, 0, 0)},
 	}
-	for interval, want := range cases {
-		got, err := GetNextReminderDate(ChoreReminder{Interval: interval})
+	for _, c := range cases {
+		got, err := GetNextReminderDate(ChoreReminder{Interval: c.interval, IntervalValue: c.value})
 		if err != nil {
-			t.Errorf("%s: unexpected error: %v", interval, err)
+			t.Errorf("%s x%d: unexpected error: %v", c.interval, c.value, err)
 			continue
 		}
-		if d := got.Sub(want); d < -time.Minute || d > time.Minute {
-			t.Errorf("%s: got %v, want about %v", interval, got, want)
+		if d := got.Sub(c.want); d < -time.Minute || d > time.Minute {
+			t.Errorf("%s x%d: got %v, want about %v", c.interval, c.value, got, c.want)
 		}
+	}
+
+	// A day-of-month reminder lands on that day, after its current date.
+	got, err := GetNextReminderDate(ChoreReminder{Interval: "DOM", IntervalValue: 26, Date: now.AddDate(0, 1, 0)})
+	if err != nil || got.Day() != min(26, clampDay(got.Year(), got.Month(), 26)) || !got.After(now) {
+		t.Errorf("DOM: got %v, %v", got, err)
 	}
 
 	// "Once" reminders are deleted by callers, so they have no next date.
 	for _, interval := range []string{"Once", "", "Bogus"} {
-		if _, err := GetNextReminderDate(ChoreReminder{Interval: interval}); err == nil {
+		if _, err := GetNextReminderDate(ChoreReminder{Interval: interval, IntervalValue: 1}); err == nil {
 			t.Errorf("%q: expected error", interval)
+		}
+	}
+	// A repeating reminder with no count would otherwise schedule for today.
+	if _, err := GetNextReminderDate(ChoreReminder{Interval: "Week"}); err == nil {
+		t.Error("zero interval value: expected error")
+	}
+}
+
+func TestDescribe(t *testing.T) {
+	cases := map[string]ChoreReminder{
+		"Every day":                  {Interval: "Day", IntervalValue: 1},
+		"Every 2 weeks":              {Interval: "Week", IntervalValue: 2},
+		"Every year":                 {Interval: "Year", IntervalValue: 1},
+		"On the 1st of every month":  {Interval: "DOM", IntervalValue: 1},
+		"On the 22nd of every month": {Interval: "DOM", IntervalValue: 22},
+		"On the 11th of every month": {Interval: "DOM", IntervalValue: 11},
+		"On the 26th of every month": {Interval: "DOM", IntervalValue: 26},
+		"Once":                       {Interval: "Once"},
+	}
+	for want, r := range cases {
+		if got := r.Describe(); got != want {
+			t.Errorf("%+v: got %q, want %q", r, got, want)
+		}
+	}
+}
+
+func TestReminderIntervalValueFromForm(t *testing.T) {
+	form := func(interval, value string) url.Values {
+		return url.Values{"date": {"2026-10-12"}, "choreID": {"3"}, "interval": {interval}, "intervalValue": {value}}
+	}
+	for _, c := range []struct {
+		interval, value string
+		want            int
+		ok              bool
+	}{
+		{"Week", "2", 2, true},
+		{"DOM", "31", 31, true},
+		{"Once", "", 0, true},
+		{"Once", "7", 0, true},
+		{"Week", "", 0, false},
+		{"Week", "0", 0, false},
+		{"Week", "-1", 0, false},
+		{"Week", "x", 0, false},
+		{"DOM", "32", 0, false},
+	} {
+		r, err := ChoreReminderFromForm(form(c.interval, c.value), 1)
+		if (err == nil) != c.ok || (c.ok && r.IntervalValue != c.want) {
+			t.Errorf("%s %q: got %d, %v", c.interval, c.value, r.IntervalValue, err)
 		}
 	}
 }
@@ -157,5 +216,28 @@ func TestPasswordHashing(t *testing.T) {
 	}
 	if u.CheckPassword("hunter3") || u.CheckPassword("") {
 		t.Error("wrong password accepted")
+	}
+}
+
+func TestNextDayOfMonth(t *testing.T) {
+	d := func(y int, m time.Month, day int) time.Time { return time.Date(y, m, day, 0, 0, 0, 0, time.Local) }
+	cases := []struct {
+		name     string
+		due, now time.Time
+		day      int
+		want     time.Time
+	}{
+		{"done early, before due", d(2026, 1, 26), d(2026, 1, 10), 26, d(2026, 2, 26)},
+		{"done late, past due", d(2026, 1, 26), d(2026, 2, 10), 26, d(2026, 2, 26)},
+		{"done on the due day", d(2026, 1, 26), d(2026, 1, 26), 26, d(2026, 2, 26)},
+		{"done late, past this month's day", d(2026, 1, 26), d(2026, 2, 27), 26, d(2026, 3, 26)},
+		{"december rolls the year", d(2026, 12, 26), d(2026, 12, 10), 26, d(2027, 1, 26)},
+		{"31st clamps to short month", d(2026, 1, 31), d(2026, 1, 15), 31, d(2026, 2, 28)},
+		{"31st after clamped month", d(2026, 2, 28), d(2026, 2, 28), 31, d(2026, 3, 31)},
+	}
+	for _, c := range cases {
+		if got := nextDayOfMonth(c.due, c.now, c.day); !got.Equal(c.want) {
+			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
+		}
 	}
 }

@@ -149,8 +149,8 @@ func TestListUsers(t *testing.T) {
 	alice, _ := findUser(t, "alice")
 	c := models.Chore{Name: "c", UserID: alice.ID}
 	database.DB.Create(&c)
-	database.DB.Create(&models.ChoreReminder{ChoreID: uint64(c.ID), Date: time.Now(), Interval: "Daily", UserID: alice.ID})
-	database.DB.Create(&models.ChoreReminder{ChoreID: uint64(c.ID), Date: time.Now(), Interval: "Weekly", UserID: alice.ID})
+	database.DB.Create(&models.ChoreReminder{ChoreID: uint64(c.ID), Date: time.Now(), Interval: "Day", IntervalValue: 1, UserID: alice.ID})
+	database.DB.Create(&models.ChoreReminder{ChoreID: uint64(c.ID), Date: time.Now(), Interval: "Week", IntervalValue: 1, UserID: alice.ID})
 	database.DB.Create(&models.Task{Name: "t", Date: time.Now(), UserID: alice.ID})
 
 	out = mustRun(t, "", "list-users")
@@ -185,7 +185,7 @@ func seedData(t *testing.T, username string) {
 	}
 	c := models.Chore{Name: username + " chore", UserID: u.ID}
 	database.DB.Create(&c)
-	database.DB.Create(&models.ChoreReminder{ChoreID: uint64(c.ID), Date: time.Now(), Interval: "Daily", UserID: u.ID})
+	database.DB.Create(&models.ChoreReminder{ChoreID: uint64(c.ID), Date: time.Now(), Interval: "Day", IntervalValue: 1, UserID: u.ID})
 	database.DB.Create(&models.Task{Name: username + " task", Date: time.Now(), UserID: u.ID})
 }
 

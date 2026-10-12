@@ -49,7 +49,7 @@ templ choresDetailPage(chore models.Chore) {
 						<div class="col-md-6 col-lg-4 mb-3">
 							<div class="card h-100">
 								<div class="card-body">
-									<h6 class="card-title">{ reminder.Interval }</h6>
+									<h6 class="card-title">{ reminder.Describe() }</h6>
 									<p class="card-text">
 										<small class="text-muted">
 											<strong>Next:</strong> { reminder.Date.Format("Jan 02, 2006") }
@@ -114,7 +114,7 @@ templ choresDetailPage(chore models.Chore) {
 							</div>
 							<div class="modal-body">
 								<p>Are you sure you'd like to delete this reminder?</p>
-								<p><strong>{ reminder.Interval }</strong> - { reminder.Date.Format("Jan 02, 2006 at 3:04 PM") }</p>
+								<p><strong>{ reminder.Describe() }</strong> - { reminder.Date.Format("Jan 02, 2006 at 3:04 PM") }</p>
 							</div>
 							<div class="modal-footer">
 								<form method="post" action={ templ.URL(routes.URLFor("remindersDetail", reminder.ID)) } class="w-100 d-flex justify-content-between">

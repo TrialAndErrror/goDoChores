@@ -15,7 +15,7 @@ import (
 type Chore struct {
 	gorm.Model
 	Name, Description string
-	Time              string // freeform, e.g. "20 min" or "about an hour"
+	Time              string          // freeform, e.g. "20 min" or "about an hour"
 	Reminders         []ChoreReminder `gorm:"foreignKey:ChoreID"`
 	Tags              []ChoreTag      `gorm:"foreignKey:ChoreID"`
 
@@ -48,13 +48,70 @@ type ChoreReminder struct {
 	ChoreID  uint64
 	Date     time.Time
 	Interval string
+	// IntervalValue is the count for Day/Week/Month/Year ("every N weeks") and
+	// the day of the month for DOM. It is 0 for Once.
+	IntervalValue int `gorm:"not null;default:0"`
 
 	UserID uint
 	User   User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 // intervals is the single, ordered list of valid reminder intervals.
-var intervals = []string{"Daily", "Weekly", "Monthly", "Annual", "Once"}
+var intervals = []string{"Day", "Week", "Month", "Year", "DOM", "Once"}
+
+// intervalLabels is how each interval is named in the reminder form.
+var intervalLabels = map[string]string{
+	"Day":   "Day(s)",
+	"Week":  "Week(s)",
+	"Month": "Month(s)",
+	"Year":  "Year(s)",
+	"DOM":   "Day of the month",
+	"Once":  "Once",
+}
+
+// IntervalLabel returns the form label for an interval name.
+func IntervalLabel(name string) string {
+	if l, ok := intervalLabels[name]; ok {
+		return l
+	}
+	return name
+}
+
+// Describe returns the reminder's schedule in words, e.g. "Every 2 weeks" or
+// "On the 26th of every month".
+func (r ChoreReminder) Describe() string {
+	n := r.IntervalValue
+	plural := func(unit string) string {
+		if n == 1 {
+			return "Every " + unit
+		}
+		return "Every " + strconv.Itoa(n) + " " + unit + "s"
+	}
+	switch r.Interval {
+	case "Day", "Week", "Month", "Year":
+		return plural(strings.ToLower(r.Interval))
+	case "DOM":
+		return "On the " + ordinal(n) + " of every month"
+	case "Once":
+		return "Once"
+	}
+	return r.Interval
+}
+
+func ordinal(n int) string {
+	suffix := "th"
+	if n%100 < 11 || n%100 > 13 {
+		switch n % 10 {
+		case 1:
+			suffix = "st"
+		case 2:
+			suffix = "nd"
+		case 3:
+			suffix = "rd"
+		}
+	}
+	return strconv.Itoa(n) + suffix
+}
 
 // GetIntervalNames returns a copy of the valid interval names, in display order.
 func GetIntervalNames() []string {
@@ -85,29 +142,70 @@ func ChoreReminderFromForm(data url.Values, userID uint) (ChoreReminder, error) 
 		return ChoreReminder{}, errors.New("invalid interval")
 	}
 
+	intervalValue := 0
+	if interval != "Once" {
+		v, err := strconv.Atoi(strings.TrimSpace(data.Get("intervalValue")))
+		if err != nil || v < 1 {
+			return ChoreReminder{}, errors.New("interval value must be a whole number of at least 1")
+		}
+		if interval == "DOM" && v > 31 {
+			return ChoreReminder{}, errors.New("day of the month must be between 1 and 31")
+		}
+		intervalValue = v
+	}
+
 	reminder := ChoreReminder{
-		ChoreID:  choreID,
-		Date:     date,
-		Interval: interval,
-		UserID:   userID,
+		ChoreID:       choreID,
+		Date:          date,
+		Interval:      interval,
+		IntervalValue: intervalValue,
+		UserID:        userID,
 	}
 	return reminder, nil
-
 }
 
 func GetNextReminderDate(reminder ChoreReminder) (time.Time, error) {
+	if reminder.Interval != "Once" && reminder.IntervalValue < 1 {
+		return time.Time{}, errors.New("invalid interval value")
+	}
+	now := time.Now()
 	switch reminder.Interval {
-	case "Daily":
-		return time.Now().AddDate(0, 0, 1), nil
-	case "Weekly":
-		return time.Now().AddDate(0, 0, 7), nil
-	case "Monthly":
-		return time.Now().AddDate(0, 1, 0), nil
-	case "Annual":
-		return time.Now().AddDate(1, 0, 0), nil
+	case "Day":
+		return now.AddDate(0, 0, reminder.IntervalValue), nil
+	case "Week":
+		return now.AddDate(0, 0, 7*reminder.IntervalValue), nil
+	case "Month":
+		return now.AddDate(0, reminder.IntervalValue, 0), nil
+	case "Year":
+		return now.AddDate(reminder.IntervalValue, 0, 0), nil
+	case "DOM":
+		return nextDayOfMonth(reminder.Date, now, reminder.IntervalValue), nil
 	default:
 		return time.Time{}, errors.New("invalid interval")
 	}
+}
+
+// nextDayOfMonth returns the first occurrence of the given day of the month
+// strictly after the later of due and now. Completing a reminder early
+// (before due) therefore skips the occurrence being completed, while
+// completing it late lands on the next occurrence still ahead of today.
+// Days past the end of a short month are clamped to its last day.
+func nextDayOfMonth(due, now time.Time, day int) time.Time {
+	base := now
+	if due.After(now) {
+		base = due
+	}
+	y, m, d := base.Date()
+	if d >= clampDay(y, m, day) {
+		m++ // time.Date normalizes month 13 into January of the next year
+	}
+	return time.Date(y, m, clampDay(y, m, day), 0, 0, 0, 0, time.Local)
+}
+
+// clampDay limits day to the number of days in the given month.
+func clampDay(year int, month time.Month, day int) int {
+	last := time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Day()
+	return min(day, last)
 }
 
 type User struct {

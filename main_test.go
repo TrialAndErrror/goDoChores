@@ -67,7 +67,7 @@ func newTestApp(t *testing.T) (*testApp, seed) {
 	mk := func(u *models.User) (chore, reminder, task uint) {
 		c := models.Chore{Name: u.Username + " chore", Description: "d", Time: "10 min", UserID: u.ID}
 		db.Create(&c)
-		r := models.ChoreReminder{ChoreID: uint64(c.ID), Date: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Interval: "Weekly", UserID: u.ID}
+		r := models.ChoreReminder{ChoreID: uint64(c.ID), Date: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Interval: "Week", IntervalValue: 1, UserID: u.ID}
 		db.Create(&r)
 		tk := models.Task{Name: u.Username + " task", Description: "d", Date: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), UserID: u.ID}
 		db.Create(&tk)
@@ -266,7 +266,7 @@ func TestUsersCannotAccessEachOthersData(t *testing.T) {
 	reminder := fmt.Sprintf("/reminders/%d/", s.aliceReminder)
 	task := fmt.Sprintf("/tasks/%d/", s.aliceTask)
 
-	edit := url.Values{"name": {"hacked"}, "description": {"hacked"}, "time": {"1"}, "date": {"2030-01-01"}, "interval": {"Daily"}, "choreID": {fmt.Sprint(s.bobChore)}}
+	edit := url.Values{"name": {"hacked"}, "description": {"hacked"}, "time": {"1"}, "date": {"2030-01-01"}, "interval": {"Day"}, "intervalValue": {"1"}, "choreID": {fmt.Sprint(s.bobChore)}}
 	del := url.Values{"action": {"delete"}}
 
 	cases := []struct {
@@ -296,7 +296,7 @@ func TestUsersCannotAccessEachOthersData(t *testing.T) {
 	}
 	var gotReminder models.ChoreReminder
 	database.DB.First(&gotReminder, s.aliceReminder)
-	if gotReminder.Interval != "Weekly" || gotReminder.ChoreID != uint64(s.aliceChore) {
+	if gotReminder.Interval != "Week" || gotReminder.ChoreID != uint64(s.aliceChore) {
 		t.Errorf("alice's reminder was modified: %+v", gotReminder)
 	}
 	var gotTask models.Task
@@ -329,7 +329,7 @@ func TestReminderCannotReferenceAnotherUsersChore(t *testing.T) {
 
 	before := count(t, &models.ChoreReminder{}, "user_id <> 0")
 	rec := a.do("bob", "POST", "/reminders/new", url.Values{
-		"date": {"2026-12-01"}, "choreID": {fmt.Sprint(s.aliceChore)}, "interval": {"Daily"},
+		"date": {"2026-12-01"}, "choreID": {fmt.Sprint(s.aliceChore)}, "interval": {"Day"}, "intervalValue": {"1"},
 	})
 	expectStatus(t, rec, http.StatusBadRequest, "create reminder on alice's chore")
 	if after := count(t, &models.ChoreReminder{}, "user_id <> 0"); after != before {
@@ -337,7 +337,7 @@ func TestReminderCannotReferenceAnotherUsersChore(t *testing.T) {
 	}
 
 	rec = a.do("bob", "POST", fmt.Sprintf("/reminders/%d/edit", s.bobReminder), url.Values{
-		"date": {"2026-12-01"}, "choreID": {fmt.Sprint(s.aliceChore)}, "interval": {"Daily"},
+		"date": {"2026-12-01"}, "choreID": {fmt.Sprint(s.aliceChore)}, "interval": {"Day"}, "intervalValue": {"1"},
 	})
 	expectStatus(t, rec, http.StatusBadRequest, "edit reminder to alice's chore")
 	var r models.ChoreReminder
@@ -348,7 +348,7 @@ func TestReminderCannotReferenceAnotherUsersChore(t *testing.T) {
 
 	// Pointing at your own chore is fine.
 	rec = a.do("bob", "POST", "/reminders/new", url.Values{
-		"date": {"2026-12-01"}, "choreID": {fmt.Sprint(s.bobChore)}, "interval": {"Daily"},
+		"date": {"2026-12-01"}, "choreID": {fmt.Sprint(s.bobChore)}, "interval": {"Day"}, "intervalValue": {"1"},
 	})
 	expectStatus(t, rec, http.StatusFound, "create reminder on own chore")
 }
@@ -361,7 +361,7 @@ func TestInvalidFormsAreRejectedWithoutCreatingRows(t *testing.T) {
 	tasks := count(t, &models.Task{}, "1 = 1")
 
 	expectStatus(t, a.do("alice", "POST", "/chores/new", url.Values{"name": {"x"}, "time": {strings.Repeat("a", 101)}}), http.StatusBadRequest, "bad chore time")
-	expectStatus(t, a.do("alice", "POST", "/reminders/new", url.Values{"date": {"bad"}, "choreID": {fmt.Sprint(s.aliceChore)}, "interval": {"Daily"}}), http.StatusBadRequest, "bad reminder date")
+	expectStatus(t, a.do("alice", "POST", "/reminders/new", url.Values{"date": {"bad"}, "choreID": {fmt.Sprint(s.aliceChore)}, "interval": {"Day"}, "intervalValue": {"1"}}), http.StatusBadRequest, "bad reminder date")
 	expectStatus(t, a.do("alice", "POST", "/reminders/new", url.Values{"date": {"2026-12-01"}, "choreID": {fmt.Sprint(s.aliceChore)}, "interval": {"Hourly"}}), http.StatusBadRequest, "bad reminder interval")
 	expectStatus(t, a.do("alice", "POST", "/tasks/new", url.Values{"name": {"x"}, "date": {"bad"}}), http.StatusBadRequest, "bad task date")
 
@@ -488,8 +488,8 @@ func TestEditsValidateInput(t *testing.T) {
 		{"chore blank name", chore, url.Values{"name": {"   "}, "time": {"5"}}},
 		{"chore overlong time", chore, url.Values{"name": {"x"}, "time": {strings.Repeat("a", 101)}}},
 		{"reminder bogus interval", reminder, url.Values{"choreID": {ownChore}, "date": {"2026-12-01"}, "interval": {"Hourly"}}},
-		{"reminder bad date", reminder, url.Values{"choreID": {ownChore}, "date": {"garbage"}, "interval": {"Daily"}}},
-		{"reminder missing chore", reminder, url.Values{"date": {"2026-12-01"}, "interval": {"Daily"}}},
+		{"reminder bad date", reminder, url.Values{"choreID": {ownChore}, "date": {"garbage"}, "interval": {"Day"}, "intervalValue": {"1"}}},
+		{"reminder missing chore", reminder, url.Values{"date": {"2026-12-01"}, "interval": {"Day"}, "intervalValue": {"1"}}},
 		{"task empty name", task, url.Values{"name": {""}, "date": {"2026-12-01"}}},
 		{"task bad date", task, url.Values{"name": {"x"}, "date": {"garbage"}}},
 	}
@@ -505,7 +505,7 @@ func TestEditsValidateInput(t *testing.T) {
 	}
 	var gr models.ChoreReminder
 	database.DB.First(&gr, s.aliceReminder)
-	if gr.Interval != "Weekly" || !gr.Date.Equal(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)) {
+	if gr.Interval != "Week" || !gr.Date.Equal(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)) {
 		t.Errorf("reminder changed: %+v", gr)
 	}
 	var gt models.Task
@@ -523,13 +523,13 @@ func TestEditsValidateInput(t *testing.T) {
 	}
 
 	// Valid edits still work and redirect to the detail page.
-	rec := a.do("alice", "POST", reminder, url.Values{"choreID": {ownChore}, "date": {"2026-12-01"}, "interval": {"Monthly"}})
+	rec := a.do("alice", "POST", reminder, url.Values{"choreID": {ownChore}, "date": {"2026-12-01"}, "interval": {"Month"}, "intervalValue": {"1"}})
 	expectStatus(t, rec, http.StatusSeeOther, "valid reminder edit")
 	if loc := rec.Header().Get("Location"); loc != fmt.Sprintf("/reminders/%d/", s.aliceReminder) {
 		t.Errorf("reminder edit redirected to %q", loc)
 	}
 	database.DB.First(&gr, s.aliceReminder)
-	if gr.Interval != "Monthly" || !gr.Date.Equal(time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)) {
+	if gr.Interval != "Month" || !gr.Date.Equal(time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)) {
 		t.Errorf("reminder not updated: %+v", gr)
 	}
 	rec = a.do("alice", "POST", chore, url.Values{"name": {"New name"}, "description": {"d"}, "time": {"0"}})
@@ -545,7 +545,7 @@ func TestDeletingAChoreDeletesItsReminders(t *testing.T) {
 	// A second reminder on Alice's chore, on top of the seeded one.
 	var alice models.User
 	database.DB.Where("username = ?", "alice").First(&alice)
-	extra := models.ChoreReminder{ChoreID: uint64(s.aliceChore), Date: time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC), Interval: "Daily", UserID: alice.ID}
+	extra := models.ChoreReminder{ChoreID: uint64(s.aliceChore), Date: time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC), Interval: "Day", IntervalValue: 1, UserID: alice.ID}
 	database.DB.Create(&extra)
 
 	// Sanity: before deleting, the chore and its reminders are visible.
@@ -629,7 +629,7 @@ func TestHomeInfiniteScroll(t *testing.T) {
 			name := fmt.Sprintf("c%02d", i)
 			c := models.Chore{Name: name, Time: "1 min", UserID: alice.ID}
 			database.DB.Create(&c)
-			database.DB.Create(&models.ChoreReminder{ChoreID: uint64(c.ID), Date: date, Interval: "Daily", UserID: alice.ID})
+			database.DB.Create(&models.ChoreReminder{ChoreID: uint64(c.ID), Date: date, Interval: "Day", IntervalValue: 1, UserID: alice.ID})
 			want = append(want, name)
 		}
 	}

@@ -27,13 +27,38 @@ templ remindersCreatePage(chores []models.Chore, intervals []string, selectedCho
 						<input type="date" class="form-control" id="date" name="date"/>
 					</div>
 					<div class="form-group">
-						<label for="interval">Interval</label>
+						<label for="interval">Repeats</label>
 						<select name="interval" id="interval" class="form-control">
 							for _, interval := range intervals {
-								<option value={ interval }>{ interval }</option>
+								<option value={ interval }>{ models.IntervalLabel(interval) }</option>
 							}
 						</select>
 					</div>
+					<div class="form-group" id="intervalValueGroup">
+						<label for="intervalValue" id="intervalValueLabel">Every</label>
+						<input type="number" min="1" max="999" class="form-control" id="intervalValue" name="intervalValue" value="1" required/>
+						<small class="text-muted" id="intervalValueHelp"></small>
+					</div>
+					<script>
+						(function () {
+							const interval = document.getElementById("interval")
+							const group = document.getElementById("intervalValueGroup")
+							const input = document.getElementById("intervalValue")
+							const label = document.getElementById("intervalValueLabel")
+							const help = document.getElementById("intervalValueHelp")
+							function sync() {
+								const once = interval.value === "Once"
+								const dom = interval.value === "DOM"
+								group.hidden = once
+								input.disabled = once
+								input.max = dom ? 31 : 999
+								label.innerText = dom ? "Day of the month" : "Every"
+								help.innerText = dom ? "1-31. Short months use their last day." : ""
+							}
+							interval.addEventListener("change", sync)
+							sync()
+						})()
+					</script>
 					<button type="submit" class="btn btn-success btn-lg">Create Chore Reminder</button>
 				</form>
 			</div>
